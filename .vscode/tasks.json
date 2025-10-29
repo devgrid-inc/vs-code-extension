@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "npm: compile",
+      "type": "shell",
+      "command": "/Users/duncanmapes/.nvm/versions/node/v20.18.1/bin/node",
+      "args": [
+        "./node_modules/typescript/lib/tsc.js",
+        "-p",
+        "."
+      ],
+      "problemMatcher": [
+        "$tsc"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}
