@@ -7,7 +7,7 @@ import {
   DevGridIncident,
   DevGridDependency,
 } from "./types";
-import { DevGridSecretStorage } from "./secretStorage";
+import { AuthService } from "./authService";
 
 export class DevGridTreeDataProvider
   implements vscode.TreeDataProvider<DevGridTreeItem>
@@ -23,15 +23,14 @@ export class DevGridTreeDataProvider
   private isLoading = false;
   private errorMessage: string | undefined;
   private readonly outputChannel: vscode.OutputChannel;
-  private readonly secretStorage: DevGridSecretStorage;
-  private hasNotifiedConfigFallback = false;
+  private readonly authService: AuthService;
 
   constructor(
     outputChannel: vscode.OutputChannel,
-    secretStorage: DevGridSecretStorage
+    authService: AuthService
   ) {
     this.outputChannel = outputChannel;
-    this.secretStorage = secretStorage;
+    this.authService = authService;
   }
 
   async initialize(): Promise<void> {
@@ -71,37 +70,24 @@ export class DevGridTreeDataProvider
       );
 
       const configuration = vscode.workspace.getConfiguration("devgrid");
-      const secretApiKey = await this.secretStorage.getApiKey();
-      const configApiKey = configuration.get<string>("apiKey")?.trim();
-      let apiKey = secretApiKey;
-
-      if (!apiKey && configApiKey) {
-        apiKey = configApiKey;
-        if (!this.hasNotifiedConfigFallback) {
-          this.outputChannel.appendLine(
-            "DevGrid: Using API key from settings. Run 'DevGrid: Set API Key' to store it securely."
-          );
-          this.hasNotifiedConfigFallback = true;
-        }
-      }
       const apiBaseUrl =
         this.context.config?.apiBaseUrl?.trim() ||
         configuration.get<string>("apiBaseUrl", "https://prod.api.devgrid.io");
       const maxItems = configuration.get<number>("maxItemsPerSection", 5);
 
-      if (!apiKey) {
-        this.errorMessage =
-          "Set a DevGrid API key with the 'DevGrid: Set API Key' command.";
+      const accessToken = await this.authService.getAccessToken();
+      if (!accessToken) {
+        this.errorMessage = "Sign in with DevGrid to fetch insights.";
         this.insights = undefined;
         this.outputChannel.appendLine(
-          "[DevGrid] no API key found (secret or settings)"
+          "[DevGrid] no OAuth access token available"
         );
         return;
       }
 
       this.client = new DevGridClient({
         apiBaseUrl,
-        apiKey,
+        accessToken,
         maxItems,
         endpoints: this.context.config?.endpoints,
         outputChannel: this.outputChannel,
@@ -202,6 +188,10 @@ export class DevGridTreeDataProvider
       case "section:dependencies":
         return this.getDependencyItems();
       default:
+        // Handle vulnerability groups
+        if (element.contextValue?.startsWith("vulnerability-group:")) {
+          return this.getVulnerabilityGroupItems(element.contextValue);
+        }
         return [];
     }
   }
@@ -320,9 +310,58 @@ export class DevGridTreeDataProvider
       return [DevGridTreeItem.empty("No active vulnerabilities.")];
     }
 
-    return this.insights.vulnerabilities.map((item) =>
-      createVulnerabilityItem(item)
+    // Group vulnerabilities by criticality
+    const vulnerabilitiesByCriticality = this.insights.vulnerabilities.reduce(
+      (groups, vulnerability) => {
+        const criticality = vulnerability.severity?.toLowerCase() || "unknown";
+        if (!groups[criticality]) {
+          groups[criticality] = [];
+        }
+        groups[criticality].push(vulnerability);
+        return groups;
+      },
+      {} as Record<string, DevGridVulnerability[]>
     );
+
+    // Create criticality groups in order of severity
+    const criticalityOrder = ["critical", "high", "medium", "low", "unknown"];
+    const items: DevGridTreeItem[] = [];
+
+    for (const criticality of criticalityOrder) {
+      const vulnerabilities = vulnerabilitiesByCriticality[criticality];
+      if (vulnerabilities && vulnerabilities.length > 0) {
+        const criticalityLabel = criticality.toUpperCase();
+        const count = vulnerabilities.length;
+        
+        // Create a collapsible group for this criticality
+        const groupItem = new DevGridTreeItem(
+          `${criticalityLabel} (${count})`,
+          vscode.TreeItemCollapsibleState.Collapsed,
+          `vulnerability-group:${criticality}`
+        );
+        groupItem.iconPath = new vscode.ThemeIcon(severityToIcon(criticality));
+        groupItem.contextValue = `vulnerability-group:${criticality}`;
+        items.push(groupItem);
+      }
+    }
+
+    return items;
+  }
+
+  private getVulnerabilityGroupItems(contextValue: string): DevGridTreeItem[] {
+    if (!this.insights) {
+      return [];
+    }
+
+    // Extract criticality from context value (e.g., "vulnerability-group:critical" -> "critical")
+    const criticality = contextValue.replace("vulnerability-group:", "");
+    
+    // Filter vulnerabilities by criticality
+    const vulnerabilities = this.insights.vulnerabilities.filter(
+      (vulnerability) => (vulnerability.severity?.toLowerCase() || "unknown") === criticality
+    );
+
+    return vulnerabilities.map((vulnerability) => createVulnerabilityItem(vulnerability));
   }
 
   private getIncidentItems(): DevGridTreeItem[] {

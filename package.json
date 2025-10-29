@@ -1,18 +1,36 @@
 {
-  "name": "devgrid-insights",
-  "displayName": "DevGrid Insights",
+  "name": "devgrid-vscode-extension",
+  "displayName": "DevGrid VsCode Extension",
   "description": "Surface DevGrid insights (vulnerabilities, incidents, dependencies) for the repo, component, and application you are working on.",
   "version": "0.0.1",
   "publisher": "devgrid",
   "engines": {
     "vscode": "^1.85.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/devgrid-inc/vs-code-extension.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "security",
+    "vulnerabilities",
+    "incidents",
+    "dependencies",
+    "devgrid"
+  ],
   "categories": [
     "Other"
   ],
   "activationEvents": [
     "workspaceContains:devgrid.yaml",
-    "onStartupFinished"
+    "onStartupFinished",
+    "onCommand:devgrid.refresh",
+    "onCommand:devgrid.openSettings",
+    "onCommand:devgrid.openDashboard",
+    "onCommand:devgrid.signIn",
+    "onCommand:devgrid.signOut",
+    "onCommand:devgrid.showAccount"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -30,12 +48,16 @@
         "title": "DevGrid: Open in DevGrid"
       },
       {
-        "command": "devgrid.setApiKey",
-        "title": "DevGrid: Set API Key"
+        "command": "devgrid.signIn",
+        "title": "DevGrid: Sign In"
       },
       {
-        "command": "devgrid.clearApiKey",
-        "title": "DevGrid: Clear API Key"
+        "command": "devgrid.signOut",
+        "title": "DevGrid: Sign Out"
+      },
+      {
+        "command": "devgrid.showAccount",
+        "title": "DevGrid: Show Account"
       }
     ],
     "views": {
@@ -50,17 +72,12 @@
       {
         "view": "devgridInsights",
         "icon": "info",
-        "contents": "Welcome to DevGrid Insights.\n\n1. Set your API key: <a href=command:devgrid.setApiKey>DevGrid: Set API Key</a>\n2. (Optional) Create a devgrid.yaml for custom identifiers.\n3. Refresh: <a href=command:devgrid.refresh>DevGrid: Refresh Insights</a>\n\nIf nothing appears, open the Output panel and select 'DevGrid' for logs."
+        "contents": "Welcome to DevGrid Insights.\n\n1. Sign in with DevGrid: <a href=command:devgrid.signIn>DevGrid: Sign In</a>\n2. (Optional) Create a devgrid.yaml for custom identifiers.\n3. Refresh: <a href=command:devgrid.refresh>DevGrid: Refresh Insights</a>\n\nIf nothing appears, open the Output panel and select 'DevGrid' for logs."
       }
     ],
     "configuration": {
       "title": "DevGrid",
       "properties": {
-        "devgrid.apiKey": {
-          "type": "string",
-          "default": "",
-          "markdownDescription": "Deprecated: prefer the `DevGrid: Set API Key` command (stores securely). Used as a fallback only."
-        },
         "devgrid.apiBaseUrl": {
           "type": "string",
           "default": "https://prod.api.devgrid.io",
@@ -76,21 +93,44 @@
       }
     }
   },
+  "authentication": [
+    {
+      "id": "devgrid-auth",
+      "label": "DevGrid"
+    }
+  ],
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:run": "vitest run",
     "lint": "eslint src --ext ts",
-    "package": "vsce package"
+    "lint:fix": "eslint src --ext ts --fix",
+    "format": "prettier --write \"src/**/*.{ts,js,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
+    "package": "vsce package",
+    "publish": "vsce publish"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^18.19.26",
+    "@types/node": "^20.19.24",
     "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "@vitest/ui": "^4.0.5",
+    "@vscode/vsce": "^3.6.2",
     "eslint": "^8.57.0",
-    "typescript": "^5.4.5"
+    "eslint-plugin-import": "^2.32.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.4.5",
+    "vitest": "^4.0.5"
   },
   "dependencies": {
+    "graphql": "^16.9.0",
     "js-yaml": "^4.1.0"
   }
 }

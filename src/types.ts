@@ -16,6 +16,15 @@ export interface DevGridEndpointTemplates {
   dependencies?: string;
   dashboardUrl?: string;
   entities?: string;
+  graphql?: string;
+}
+
+export interface DevGridClientOptions {
+  apiBaseUrl: string;
+  accessToken?: string;
+  maxItems: number;
+  endpoints?: DevGridEndpointTemplates;
+  outputChannel?: { appendLine: (message: string) => void };
 }
 
 export interface DevGridProjectComponentConfig {

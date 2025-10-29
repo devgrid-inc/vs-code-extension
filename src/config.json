@@ -1,0 +1,8 @@
+{
+  "auth": {
+    "domain": "auth.devgrid.io",
+    "clientId": "mpQSpSBDwKtKx4pQOWiUVOmQJfQoNmc5",
+    "audience": "https://prod.api.devgrid.io",
+    "scope": "openid profile email offline_access"
+  }
+}

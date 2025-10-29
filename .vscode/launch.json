@@ -2,12 +2,16 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Run Extension",
       "type": "extensionHost",
       "request": "launch",
-      "name": "Launch DevGrid Insights Extension",
       "runtimeExecutable": "${execPath}",
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js"
+      ],
       "preLaunchTask": "npm: compile"
     }
   ]

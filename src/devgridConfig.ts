@@ -203,20 +203,31 @@ async function normalizeIdentifiers(
   setIfEmpty("repositoryId", fallback((cfg) => cfg.repository_id));
   setIfEmpty("repositorySlug", fallback((cfg) => cfg.repositorySlug));
   setIfEmpty("repositorySlug", fallback((cfg) => cfg.repository_slug));
+  setIfEmpty("repositorySlug", fallback((cfg) => cfg.repository?.slug));
 
   setIfEmpty("componentId", fallback((cfg) => cfg.componentId));
   setIfEmpty("componentId", fallback((cfg) => cfg.component_id));
+  setIfEmpty("componentId", fallback((cfg) => cfg.component?.id));
   setIfEmpty("componentSlug", fallback((cfg) => cfg.componentSlug));
   setIfEmpty("componentSlug", fallback((cfg) => cfg.component_slug));
+  setIfEmpty("componentSlug", fallback((cfg) => cfg.component?.slug));
 
   setIfEmpty("applicationId", fallback((cfg) => cfg.applicationId));
   setIfEmpty("applicationId", fallback((cfg) => cfg.application_id));
+  setIfEmpty("applicationId", fallback((cfg) => cfg.application?.id));
   setIfEmpty("applicationSlug", fallback((cfg) => cfg.applicationSlug));
   setIfEmpty("applicationSlug", fallback((cfg) => cfg.application_slug));
+  setIfEmpty("applicationSlug", fallback((cfg) => cfg.application?.slug));
 
   const project = config.project;
   if (project) {
-    setIfEmpty("applicationId", safeString(project.appId));
+    // Handle both string and numeric appId values
+    const appId = project.appId;
+    if (appId !== undefined) {
+      const appIdString = typeof appId === "string" ? appId : String(appId);
+      options.outputChannel?.appendLine(`[DevGrid:config] Found project.appId=${appId} (converted to string: ${appIdString})`);
+      setIfEmpty("applicationId", appIdString);
+    }
     setIfEmpty(
       "applicationSlug",
       safeString((project as Record<string, unknown>)?.appSlug as string)

@@ -25,11 +25,11 @@ DevGrid Insights surfaces details from your DevGrid workspace directly inside VS
 
 ## Configuration
 
-### API key
+### Authentication
 
-Run the command palette (`⇧⌘P` / `Ctrl+Shift+P`) and execute **DevGrid: Set API Key** to store your key securely using VS Code’s secret storage. Use **DevGrid: Clear API Key** to remove it.
+Run the command palette (`⇧⌘P` / `Ctrl+Shift+P`) and execute **DevGrid: Sign In** to authenticate with DevGrid using the built-in provider. The resulting access token is cached securely and refreshed by VS Code.
 
-> **Note:** The legacy workspace setting `DevGrid › Api Key` still acts as a fallback, but it is deprecated because it stores the value in plaintext.
+Authentication is required for all DevGrid calls—API keys are no longer supported.
 
 ### Workspace settings
 
@@ -74,8 +74,9 @@ The identifiers act as fallbacks; the extension will also try to derive `reposit
 - **DevGrid: Refresh Insights** – Manually refresh the tree view.
 - **DevGrid: Open Settings** – Jump to the DevGrid settings section.
 - **DevGrid: Open in DevGrid** – Open the Dashboard URL derived from your configuration.
-- **DevGrid: Set API Key** – Save your API key to secure storage.
-- **DevGrid: Clear API Key** – Remove the stored API key.
+- **DevGrid: Sign In** – Authenticate using the DevGrid auth provider.
+- **DevGrid: Sign Out** – Clear the current session.
+- **DevGrid: Show Account** – Display the signed-in account (with a shortcut to sign in).
 
 ## Development Notes
 
