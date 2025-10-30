@@ -32,6 +32,8 @@ vi.mock('vscode', () => ({
       appendLine: vi.fn(),
     }),
     createWebviewPanel: vi.fn(),
+    showErrorMessage: vi.fn(),
+    showInformationMessage: vi.fn(),
   },
   commands: {
     registerCommand: vi.fn(),
@@ -54,6 +56,9 @@ vi.mock('vscode', () => ({
   },
   env: {
     openExternal: vi.fn(),
+    clipboard: {
+      writeText: vi.fn(),
+    },
   },
 }));
 

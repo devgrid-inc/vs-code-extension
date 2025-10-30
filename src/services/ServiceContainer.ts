@@ -14,6 +14,7 @@ import { GraphQLClient } from './GraphQLClient';
 import { LoggerService } from './LoggerService';
 import { GitService } from './GitService';
 import { ConfigService } from './ConfigService';
+import { validateApiUrl } from '../utils/validation';
 import type { DevGridClientOptions } from '../types';
 
 /**
@@ -30,10 +31,11 @@ export class ServiceContainer {
    * Sets the API base URL for services
    */
   setApiBaseUrl(url: string): void {
-    this.apiBaseUrl = url;
+    const validatedUrl = validateApiUrl(url);
+    this.apiBaseUrl = validatedUrl;
     const httpClient = this.services.get('httpClient') as IHttpClient | undefined;
     if (httpClient) {
-      httpClient.setBaseUrl(url);
+      httpClient.setBaseUrl(validatedUrl);
     }
 
     for (const key of Array.from(this.services.keys())) {

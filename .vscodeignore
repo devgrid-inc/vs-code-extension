@@ -1,8 +1,87 @@
-.vscode/**
-.github/**
-src/**
+# Source code - not needed in published package
+src/
+
+# Dependencies - not needed, will be installed by VS Code
+node_modules/
+
+# Development and testing files
+.vscode/
+.github/
+**/__tests__/
+**/*.test.ts
+**/*.spec.ts
+**/*.test.js
+**/*.spec.js
+coverage/
+.nyc_output/
+*.lcov
+
+# Build artifacts - exclude maps and all test files, keep only runtime JS
+dist/**/*.map
+dist/**/*.test.js
+dist/**/*.spec.js
+dist/**/*.test.ts
+dist/**/*.spec.ts
+dist/**/devgridConfigRefactored.js
+dist/**/devgridTreeDataProviderRefactored.js
+dist/**/extensionRefactored.js
+
+# Development tools and configs
+.eslintrc.json
+.prettierrc*
+.prettierignore
+vitest.config.ts
 tsconfig.json
-*.map
-*.ts
+tsconfig.*.json
+**/*.tsbuildinfo
+
+# Large demo files (consider hosting externally)
+auto-remediation-usinglocalbot.gif
+
+# GraphQL schema (development only)
+schema.graphql
+
+# Package manager lock files
 package-lock.json
-.eslintrc*
+yarn.lock
+pnpm-lock.yaml
+
+# Debug and log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+*.log
+
+# OS and editor files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+tmp/
+temp/
+.cache/
+
+# CI/CD files
+.github/
+.circleci/
+.travis.yml
+appveyor.yml
+
+# Build artifacts
+*.tgz
+*.tar.gz
+*.vsix
+
+# Backup files
+*.bak
+*.backup
