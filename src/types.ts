@@ -72,6 +72,60 @@ export interface DevGridVulnerability {
   referenceUrl?: string;
 }
 
+export interface DevGridVulnerabilityIdentifier {
+  type: string;
+  value: string;
+  url?: string;
+  name?: string;
+  description?: string;
+  publishedDate?: string;
+  cvssScore?: number;
+  vectorString?: string;
+  epssScore?: number;
+  impactScore?: number;
+  exploitabilityScore?: number;
+  attackVector?: string;
+  attackComplexity?: string;
+  weaknesses?: string[];
+  references?: unknown;
+  metrics?: unknown;
+}
+
+export interface DevGridVulnerabilityDetails {
+  id: string;
+  title: string;
+  severity: string;
+  status?: string;
+  packageName?: string;
+  versionRange?: string;
+  publishedAt?: string;
+  referenceUrl?: string;
+  identifiers?: DevGridVulnerabilityIdentifier[];
+  cvss?: {
+    baseScore?: number;
+    vector?: string;
+  };
+  description?: string;
+  remediation?: {
+    fixedVersion?: string;
+    advice?: string;
+  };
+  references?: Array<{
+    title?: string;
+    url: string;
+  }>;
+  originatingSystem?: string;
+  originatingSystemId?: string;
+  originatingSystemUrl?: string;
+  scanType?: string;
+  location?: string;
+  openDate?: string;
+  closeDate?: string;
+  vulnerableId?: string;
+  vulnerableType?: string;
+  attributes?: unknown;
+}
+
 export interface DevGridIncident {
   id: string;
   title: string;

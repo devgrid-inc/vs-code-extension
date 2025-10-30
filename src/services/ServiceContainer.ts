@@ -21,8 +21,51 @@ import type { DevGridClientOptions } from '../types';
  */
 export class ServiceContainer {
   private services = new Map<string, any>();
+  private apiBaseUrl: string = 'https://prod.api.devgrid.io'; // Default fallback
+  private authToken: string | undefined;
 
   constructor(private outputChannel: { appendLine: (message: string) => void }) {}
+
+  /**
+   * Sets the API base URL for services
+   */
+  setApiBaseUrl(url: string): void {
+    this.apiBaseUrl = url;
+    const httpClient = this.services.get('httpClient') as IHttpClient | undefined;
+    if (httpClient) {
+      httpClient.setBaseUrl(url);
+    }
+
+    for (const key of Array.from(this.services.keys())) {
+      if (
+        key.startsWith('graphqlClient:') ||
+        key.startsWith('vulnerabilityService:') ||
+        key.startsWith('incidentService:') ||
+        key.startsWith('dependencyService:') ||
+        key === 'entityResolver'
+      ) {
+        this.services.delete(key);
+      }
+    }
+  }
+
+  /**
+   * Sets the authorization token for outgoing requests
+   */
+  setAuthToken(token?: string): void {
+    this.authToken = token;
+
+    const httpClient = this.services.get('httpClient') as IHttpClient | undefined;
+    if (httpClient) {
+      httpClient.setAuthToken(token ?? '');
+    }
+
+    for (const [key, service] of this.services.entries()) {
+      if (key.startsWith('graphqlClient:')) {
+        (service as IGraphQLClient).setAuthToken(token ?? '');
+      }
+    }
+  }
 
   /**
    * Gets or creates a service instance
@@ -53,7 +96,7 @@ export class ServiceContainer {
     const graphqlClient = this.getGraphQLClient(options.apiBaseUrl, httpClient, logger);
     const gitService = this.getGitService();
     const entityResolver = this.getEntityResolver(graphqlClient, gitService, logger);
-    const vulnerabilityService = this.getVulnerabilityService(graphqlClient, logger, options.maxItems);
+    const vulnerabilityService = this.getVulnerabilityServiceForClient(graphqlClient, logger, options.maxItems);
     const incidentService = this.getIncidentService(graphqlClient, logger, options.maxItems);
     const dependencyService = this.getDependencyService(graphqlClient, logger, options.maxItems);
 
@@ -88,6 +131,10 @@ export class ServiceContainer {
     return this.get('httpClient', () => {
       const logger = this.getLogger();
       const client = new HttpClient(logger);
+      client.setBaseUrl(this.apiBaseUrl);
+      if (this.authToken) {
+        client.setAuthToken(this.authToken);
+      }
       return client;
     });
   }
@@ -101,11 +148,16 @@ export class ServiceContainer {
     logger: ILogger
   ): IGraphQLClient {
     const key = `graphqlClient:${apiBaseUrl}`;
-    return this.get(key, () => {
+    const client = this.get(key, () => {
       const client = new GraphQLClient(httpClient, logger);
       client.setEndpoint(`${apiBaseUrl}/graphql`);
+      client.setAuthToken(this.authToken ?? '');
       return client;
     });
+    if (this.authToken !== undefined) {
+      client.setAuthToken(this.authToken ?? '');
+    }
+    return client;
   }
 
   /**
@@ -130,14 +182,14 @@ export class ServiceContainer {
   }
 
   /**
-   * Gets the vulnerability service
+   * Gets the vulnerability service (private method for client creation)
    */
-  private getVulnerabilityService(
+  private getVulnerabilityServiceForClient(
     graphqlClient: IGraphQLClient,
     logger: ILogger,
     maxItems: number
   ): VulnerabilityService {
-    return this.get(`vulnerabilityService:${maxItems}`, () => 
+    return this.get(`vulnerabilityService:${maxItems}`, () =>
       new VulnerabilityService(graphqlClient, logger, maxItems)
     );
   }
@@ -169,6 +221,19 @@ export class ServiceContainer {
   }
 
   /**
+   * Gets the vulnerability service
+   */
+  getVulnerabilityService(): VulnerabilityService {
+    const logger = this.getLogger();
+    const httpClient = this.getHttpClient();
+    // Use the configured API URL
+    const graphqlClient = this.getGraphQLClient(this.apiBaseUrl, httpClient, logger);
+    return this.get('vulnerabilityService:100', () =>
+      new VulnerabilityService(graphqlClient, logger, 100)
+    );
+  }
+
+  /**
    * Gets the config loader
    */
   getConfigLoader(): IConfigLoader {
@@ -183,5 +248,6 @@ export class ServiceContainer {
    */
   clear(): void {
     this.services.clear();
+    this.authToken = undefined;
   }
 }

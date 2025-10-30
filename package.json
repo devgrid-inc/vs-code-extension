@@ -58,6 +58,10 @@
       {
         "command": "devgrid.showAccount",
         "title": "DevGrid: Show Account"
+      },
+      {
+        "command": "devgrid.openVulnerability",
+        "title": "DevGrid: Open Vulnerability Details"
       }
     ],
     "views": {
@@ -75,6 +79,15 @@
         "contents": "Welcome to DevGrid Insights.\n\n1. Sign in with DevGrid: <a href=command:devgrid.signIn>DevGrid: Sign In</a>\n2. (Optional) Create a devgrid.yaml for custom identifiers.\n3. Refresh: <a href=command:devgrid.refresh>DevGrid: Refresh Insights</a>\n\nIf nothing appears, open the Output panel and select 'DevGrid' for logs."
       }
     ],
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "devgrid.openVulnerability",
+          "when": "viewItem == vulnerability",
+          "group": "inline@1"
+        }
+      ]
+    },
     "configuration": {
       "title": "DevGrid",
       "properties": {

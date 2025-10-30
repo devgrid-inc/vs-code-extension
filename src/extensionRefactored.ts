@@ -4,7 +4,9 @@ import { AuthService } from "./authService";
 import { DevGridAuthProvider } from "./authProvider";
 import { registerAuthCommands } from "./commands/authCommands";
 import { ServiceContainer } from "./services/ServiceContainer";
+import { VulnerabilityDetailsPanel } from "./webviews/VulnerabilityDetailsPanel";
 import type { ILogger } from "./interfaces/ILogger";
+import type { VulnerabilityService } from "./services/VulnerabilityService";
 
 /**
  * Extension state management
@@ -104,7 +106,7 @@ class ExtensionState {
       }),
 
       vscode.commands.registerCommand("devgrid.openSettings", () => {
-        void vscode.commands.executeCommand("workbench.action.openSettings", "@ext:devgrid.devgrid-insights devgrid");
+        void vscode.commands.executeCommand("workbench.action.openSettings", "@ext:devgrid.devgrid-vscode-extension devgrid");
       }),
 
       vscode.commands.registerCommand("devgrid.openDashboard", async () => {
@@ -114,6 +116,22 @@ class ExtensionState {
           return;
         }
         await vscode.env.openExternal(vscode.Uri.parse(url));
+      }),
+
+      vscode.commands.registerCommand("devgrid.openVulnerability", async (vulnId: string) => {
+        try {
+          if (!this.serviceContainer) {
+            throw new Error('Service container not initialized');
+          }
+
+          const vulnerabilityService = this.serviceContainer.get<VulnerabilityService>('vulnerabilityService');
+          const logger = this.serviceContainer.get<ILogger>('logger');
+
+          VulnerabilityDetailsPanel.createOrShow(vulnId, vulnerabilityService, logger);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to open vulnerability details';
+          await vscode.window.showErrorMessage(`DevGrid: ${message}`);
+        }
       }),
     ];
 

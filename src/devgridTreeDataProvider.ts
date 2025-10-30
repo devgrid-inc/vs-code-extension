@@ -479,6 +479,8 @@ function createVulnerabilityItem(
     vscode.TreeItemCollapsibleState.None,
     "vulnerability"
   );
+  item.id = vulnerability.id;
+  (item as any).vulnerabilityId = vulnerability.id;
   item.description = descriptionParts.join(" • ");
   item.tooltip = buildTooltip([
     `Severity: ${vulnerability.severity}`,
@@ -491,13 +493,14 @@ function createVulnerabilityItem(
       : undefined,
   ]);
   item.iconPath = new vscode.ThemeIcon(severityIcon);
-  if (vulnerability.referenceUrl) {
-    item.command = {
-      command: "vscode.open",
-      title: "Open Vulnerability",
-      arguments: [vscode.Uri.parse(vulnerability.referenceUrl)],
-    };
-  }
+
+  // Set command to open vulnerability details panel
+  item.command = {
+    command: "devgrid.openVulnerability",
+    title: "Open Vulnerability Details",
+    arguments: [vulnerability.id],
+  };
+
   return item;
 }
 
