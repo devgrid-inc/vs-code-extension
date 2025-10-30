@@ -116,6 +116,24 @@
           "minimum": 1,
           "maximum": 50,
           "markdownDescription": "Maximum number of vulnerabilities, incidents, and dependencies to display in the DevGrid tree view."
+        },
+        "devgrid.autoRefresh.enabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Automatically refresh DevGrid insights in the background every few minutes."
+        },
+        "devgrid.autoRefresh.intervalMinutes": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 60,
+          "markdownDescription": "How often to automatically refresh DevGrid insights (in minutes)."
+        },
+        "devgrid.logging.level": {
+          "type": "string",
+          "enum": ["trace", "debug", "info", "warn", "error"],
+          "default": "info",
+          "markdownDescription": "Minimum log level to display in the DevGrid output channel. Set to `debug` to see full GraphQL queries and responses."
         }
       }
     }

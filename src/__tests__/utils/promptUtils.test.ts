@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { buildRemediationPrompt } from '../../utils/promptUtils';
+
 import type { DevGridVulnerabilityDetails } from '../../types';
+import { buildRemediationPrompt } from '../../utils/promptUtils';
 
 describe('buildRemediationPrompt', () => {
   it('should build a complete remediation prompt with all fields', () => {

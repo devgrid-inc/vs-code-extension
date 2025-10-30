@@ -9,6 +9,7 @@ export class HttpClient implements IHttpClient {
   private defaultHeaders: Record<string, string> = {};
   private authToken = '';
 
+  // eslint-disable-next-line no-useless-constructor -- TypeScript parameter properties for dependency injection
   constructor(private logger: ILogger) {}
 
   /**

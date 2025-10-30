@@ -101,7 +101,7 @@ describe('Command Handlers', () => {
     });
 
     it('should handle service container not initialized', async () => {
-      const commandHandler = async (treeItem: any, vulnId: string) => {
+      const commandHandler = async (_treeItem: unknown, _vulnId: string) => {
         try {
           const serviceContainer = null; // Simulate serviceContainer being null
           if (!serviceContainer) {

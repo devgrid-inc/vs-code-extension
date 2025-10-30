@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { ServiceContainer } from '../../services/ServiceContainer';
 
 describe('ServiceContainer', () => {

@@ -1,9 +1,9 @@
-import type { ILogger } from '../interfaces/ILogger';
-import type { IGraphQLClient } from '../interfaces/IGraphQLClient';
+import { ApiError } from '../errors/DevGridError';
 import type { IGitService } from '../interfaces/IGitService';
+import type { IGraphQLClient } from '../interfaces/IGraphQLClient';
+import type { ILogger } from '../interfaces/ILogger';
 import type { DevGridIdentifiers, DevGridEntitySummary } from '../types';
 import { convertToHttpsUrl, extractRepoNameFromUrl } from '../utils/urlUtils';
-import { ApiError } from '../errors/DevGridError';
 
 /**
  * GraphQL response interfaces
@@ -71,6 +71,7 @@ interface AllReposResponse {
  * Entity resolver service for DevGrid entities
  */
 export class EntityResolver {
+  // eslint-disable-next-line no-useless-constructor -- TypeScript parameter properties for dependency injection
   constructor(
     private graphqlClient: IGraphQLClient,
     private gitService: IGitService,

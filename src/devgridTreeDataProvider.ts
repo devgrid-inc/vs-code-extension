@@ -1,13 +1,17 @@
 import * as vscode from "vscode";
-import { loadDevGridContext, DevGridContext } from "./devgridConfig";
-import { DevGridClient } from "./devgridClient";
-import {
+
+import type { AuthService } from "./authService";
+import { loadDevGridContext, type DevGridContext } from "./devgridConfig";
+import type { IDevGridClient } from "./interfaces/IDevGridClient";
+import type { ILogger } from "./interfaces/ILogger";
+import type { ServiceContainer } from "./services/ServiceContainer";
+import type {
   DevGridInsightBundle,
   DevGridVulnerability,
   DevGridIncident,
   DevGridDependency,
 } from "./types";
-import { AuthService } from "./authService";
+import { validateApiUrl } from "./utils/validation";
 
 export class DevGridTreeDataProvider
   implements vscode.TreeDataProvider<DevGridTreeItem>
@@ -19,18 +23,20 @@ export class DevGridTreeDataProvider
 
   private context: DevGridContext | undefined;
   private insights: DevGridInsightBundle | undefined;
-  private client: DevGridClient | undefined;
+  private client: IDevGridClient | undefined;
   private isLoading = false;
   private errorMessage: string | undefined;
-  private readonly outputChannel: vscode.OutputChannel;
+  private readonly logger: ILogger;
   private readonly authService: AuthService;
+  private readonly serviceContainer: ServiceContainer;
 
   constructor(
-    outputChannel: vscode.OutputChannel,
+    serviceContainer: ServiceContainer,
     authService: AuthService
   ) {
-    this.outputChannel = outputChannel;
+    this.serviceContainer = serviceContainer;
     this.authService = authService;
+    this.logger = serviceContainer.get('logger');
   }
 
   async initialize(): Promise<void> {
@@ -43,31 +49,23 @@ export class DevGridTreeDataProvider
     this.onDidChangeTreeDataEmitter.fire();
 
     try {
-      this.outputChannel.appendLine("[DevGrid] refresh start");
-      this.context = await loadDevGridContext(this.outputChannel);
+      this.logger.info("Refresh started");
+      this.context = await loadDevGridContext();
       if (!this.context) {
         this.errorMessage = "Open a workspace to see DevGrid insights.";
         this.insights = undefined;
-        this.outputChannel.appendLine(
-          "[DevGrid] no workspace context available"
-        );
+        this.logger.info("No workspace context available");
         return;
       }
 
-      this.outputChannel.appendLine(
-        `[DevGrid] identifiers: repositorySlug=${
-          this.context.identifiers.repositorySlug ?? "(none)"
-        } ` +
-          `repositoryId=${this.context.identifiers.repositoryId ?? "(none)"} ` +
-          `componentSlug=${
-            this.context.identifiers.componentSlug ?? "(none)"
-          } ` +
-          `componentId=${this.context.identifiers.componentId ?? "(none)"} ` +
-          `applicationSlug=${
-            this.context.identifiers.applicationSlug ?? "(none)"
-          } ` +
-          `applicationId=${this.context.identifiers.applicationId ?? "(none)"}`
-      );
+      this.logger.info("Identifiers loaded", {
+        repositorySlug: this.context.identifiers.repositorySlug ?? "(none)",
+        repositoryId: this.context.identifiers.repositoryId ?? "(none)",
+        componentSlug: this.context.identifiers.componentSlug ?? "(none)",
+        componentId: this.context.identifiers.componentId ?? "(none)",
+        applicationSlug: this.context.identifiers.applicationSlug ?? "(none)",
+        applicationId: this.context.identifiers.applicationId ?? "(none)",
+      });
 
       const configuration = vscode.workspace.getConfiguration("devgrid");
       const apiBaseUrl =
@@ -79,39 +77,39 @@ export class DevGridTreeDataProvider
       if (!accessToken) {
         this.errorMessage = "Sign in with DevGrid to fetch insights.";
         this.insights = undefined;
-        this.outputChannel.appendLine(
-          "[DevGrid] no OAuth access token available"
-        );
+        this.logger.info("No OAuth access token available");
         return;
       }
 
-      this.client = new DevGridClient({
+      // Configure service container
+      this.serviceContainer.setApiBaseUrl(validateApiUrl(apiBaseUrl));
+      this.serviceContainer.setAuthToken(accessToken);
+
+      // Create client using service container
+      this.client = this.serviceContainer.createDevGridClient({
         apiBaseUrl,
         accessToken,
         maxItems,
         endpoints: this.context.config?.endpoints,
-        outputChannel: this.outputChannel,
       });
 
       this.insights = await this.client.fetchInsights(this.context.identifiers);
-      this.outputChannel.appendLine(
-        `[DevGrid] insights fetched repo=${
-          this.insights.repository?.slug ?? "-"
-        } component=${this.insights.component?.slug ?? "-"} application=${
-          this.insights.application?.slug ?? "-"
-        } ` +
-          `vulns=${this.insights.vulnerabilities.length} incidents=${this.insights.incidents.length} dependencies=${this.insights.dependencies.length}`
-      );
+      this.logger.info("Insights fetched", {
+        repository: this.insights.repository?.slug ?? "-",
+        component: this.insights.component?.slug ?? "-",
+        application: this.insights.application?.slug ?? "-",
+        vulnerabilities: this.insights.vulnerabilities.length,
+        incidents: this.insights.incidents.length,
+        dependencies: this.insights.dependencies.length,
+      });
     } catch (error) {
       this.errorMessage =
         error instanceof Error ? error.message : String(error);
       this.insights = undefined;
-      this.outputChannel.appendLine(
-        `[DevGrid] refresh error: ${this.errorMessage}`
-      );
+      this.logger.error("Refresh error", error as Error);
     } finally {
       this.isLoading = false;
-      this.outputChannel.appendLine("[DevGrid] refresh complete");
+      this.logger.info("Refresh complete");
       this.onDidChangeTreeDataEmitter.fire();
     }
   }
@@ -257,7 +255,7 @@ export class DevGridTreeDataProvider
       return [DevGridTreeItem.empty("Component not linked.")];
     }
 
-    const component = this.insights.component;
+    const {component} = this.insights;
     return [
       DevGridTreeItem.detail(`Name: ${component.name ?? "Unknown"}`, "package"),
       component.slug
@@ -280,7 +278,7 @@ export class DevGridTreeDataProvider
       return [DevGridTreeItem.empty("Application not linked.")];
     }
 
-    const application = this.insights.application;
+    const {application} = this.insights;
     return [
       DevGridTreeItem.detail(
         `Name: ${application.name ?? "Unknown"}`,

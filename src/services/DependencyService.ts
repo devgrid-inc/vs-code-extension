@@ -1,7 +1,7 @@
-import type { ILogger } from '../interfaces/ILogger';
-import type { IGraphQLClient } from '../interfaces/IGraphQLClient';
-import type { DevGridDependency } from '../types';
 import { ApiError } from '../errors/DevGridError';
+import type { IGraphQLClient } from '../interfaces/IGraphQLClient';
+import type { ILogger } from '../interfaces/ILogger';
+import type { DevGridDependency } from '../types';
 
 /**
  * GraphQL response interfaces
@@ -25,6 +25,7 @@ interface EntityDependenciesResponse {
  * Dependency service for DevGrid dependencies
  */
 export class DependencyService {
+  // eslint-disable-next-line no-useless-constructor -- TypeScript parameter properties for dependency injection
   constructor(
     private graphqlClient: IGraphQLClient,
     private logger: ILogger,

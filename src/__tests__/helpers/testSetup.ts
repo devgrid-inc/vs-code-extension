@@ -4,7 +4,8 @@ import { vi, afterEach } from 'vitest';
 // Mock VS Code API
 vi.mock('vscode', () => ({
   TreeItem: class {
-    constructor(public label: string, public collapsibleState?: any) {}
+    // eslint-disable-next-line no-useless-constructor -- Mock class for testing
+    constructor(public label: string, public collapsibleState?: unknown) {}
   },
   TreeItemCollapsibleState: {
     None: 0,
@@ -12,6 +13,7 @@ vi.mock('vscode', () => ({
     Expanded: 2,
   },
   ThemeIcon: class {
+    // eslint-disable-next-line no-useless-constructor -- Mock class for testing
     constructor(public icon: string) {}
   },
   Uri: {

@@ -1,7 +1,9 @@
-import * as vscode from "vscode";
+import { randomUUID } from "crypto";
 import * as https from "https";
 import { URL } from "url";
-import { randomUUID } from "crypto";
+
+import * as vscode from "vscode";
+
 import config from "./config.json";
 
 interface StoredSession {
@@ -48,6 +50,7 @@ export class DevGridAuthProvider implements vscode.AuthenticationProvider {
 
   readonly onDidChangeSessions = this.sessionChangeEmitter.event;
 
+  // eslint-disable-next-line no-useless-constructor -- TypeScript parameter properties for dependency injection
   constructor(
     private readonly secretStorage: vscode.SecretStorage,
     private readonly output: vscode.OutputChannel,
@@ -234,7 +237,7 @@ export class DevGridAuthProvider implements vscode.AuthenticationProvider {
   }
 
   private getAuthConfig(): AuthConfig {
-    const auth = config.auth;
+    const {auth} = config;
     if (!auth?.domain || !auth?.clientId || !auth?.audience || !auth?.scope) {
       throw new Error("Auth configuration is missing from config.json.");
     }

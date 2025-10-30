@@ -1,21 +1,23 @@
-import type { IDevGridClient } from '../interfaces/IDevGridClient';
 import type { IConfigLoader } from '../interfaces/IConfigLoader';
+import type { IDevGridClient } from '../interfaces/IDevGridClient';
 import type { IGitService } from '../interfaces/IGitService';
-import type { ILogger } from '../interfaces/ILogger';
-import type { IHttpClient } from '../interfaces/IHttpClient';
 import type { IGraphQLClient } from '../interfaces/IGraphQLClient';
+import type { IHttpClient } from '../interfaces/IHttpClient';
+import { LogLevel, type ILogger } from '../interfaces/ILogger';
+import type { DevGridClientOptions } from '../types';
+import { validateApiUrl } from '../utils/validation';
+
+import { ConfigService } from './ConfigService';
+import { DependencyService } from './DependencyService';
 import { DevGridClientService } from './DevGridClientService';
 import { EntityResolver } from './EntityResolver';
-import { VulnerabilityService } from './VulnerabilityService';
-import { IncidentService } from './IncidentService';
-import { DependencyService } from './DependencyService';
-import { HttpClient } from './HttpClient';
-import { GraphQLClient } from './GraphQLClient';
-import { LoggerService } from './LoggerService';
 import { GitService } from './GitService';
-import { ConfigService } from './ConfigService';
-import { validateApiUrl } from '../utils/validation';
-import type { DevGridClientOptions } from '../types';
+import { GraphQLClient } from './GraphQLClient';
+import { HttpClient } from './HttpClient';
+import { IncidentService } from './IncidentService';
+import { LoggerService } from './LoggerService';
+import { VulnerabilityService } from './VulnerabilityService';
+
 
 /**
  * Service container for dependency injection
@@ -24,7 +26,9 @@ export class ServiceContainer {
   private services = new Map<string, any>();
   private apiBaseUrl: string = 'https://prod.api.devgrid.io'; // Default fallback
   private authToken: string | undefined;
+  private logLevel: LogLevel = LogLevel.INFO;
 
+  // eslint-disable-next-line no-useless-constructor -- TypeScript parameter properties for dependency injection
   constructor(private outputChannel: { appendLine: (message: string) => void }) {}
 
   /**
@@ -67,6 +71,32 @@ export class ServiceContainer {
         (service as IGraphQLClient).setAuthToken(token ?? '');
       }
     }
+  }
+
+  /**
+   * Sets the log level for all loggers
+   */
+  setLogLevel(level: LogLevel): void {
+    this.logLevel = level;
+    const logger = this.services.get('logger') as ILogger | undefined;
+    if (logger) {
+      logger.setLevel(level);
+    }
+  }
+
+  /**
+   * Sets the log level from a string (e.g., from configuration)
+   */
+  setLogLevelFromString(levelStr: string): void {
+    const levelMap: Record<string, LogLevel> = {
+      trace: LogLevel.TRACE,
+      debug: LogLevel.DEBUG,
+      info: LogLevel.INFO,
+      warn: LogLevel.WARN,
+      error: LogLevel.ERROR,
+    };
+    const level = levelMap[levelStr.toLowerCase()] ?? LogLevel.INFO;
+    this.setLogLevel(level);
   }
 
   /**
@@ -123,7 +153,11 @@ export class ServiceContainer {
    * Gets the logger service
    */
   private getLogger(): ILogger {
-    return this.get('logger', () => new LoggerService(this.outputChannel));
+    return this.get('logger', () => {
+      const logger = new LoggerService(this.outputChannel);
+      logger.setLevel(this.logLevel);
+      return logger;
+    });
   }
 
   /**

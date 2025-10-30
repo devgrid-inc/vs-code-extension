@@ -1,6 +1,6 @@
-import { promisify } from "util";
 import { execFile } from "child_process";
 import * as path from "path";
+import { promisify } from "util";
 
 const execFileAsync = promisify(execFile);
 
@@ -8,7 +8,7 @@ async function runGit(args: string[], cwd: string): Promise<string | undefined> 
   try {
     const { stdout } = await execFileAsync("git", args, { cwd, encoding: "utf8" });
     return stdout.trim();
-  } catch (error) {
+  } catch {
     return undefined;
   }
 }
@@ -40,7 +40,7 @@ export function deriveRepositorySlug(remoteUrl?: string): string | undefined {
     const parsed = new URL(remoteUrl);
     const slug = parsed.pathname.replace(/^\/+/, "").replace(/\.git$/, "");
     return slug || undefined;
-  } catch (_error) {
+  } catch {
     return undefined;
   }
 }

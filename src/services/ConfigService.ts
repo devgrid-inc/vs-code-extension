@@ -1,22 +1,25 @@
 import * as fs from 'fs';
 import * as path from 'path';
+
 import * as yaml from 'js-yaml';
 import * as vscode from 'vscode';
-import type { DevGridFileConfig, DevGridIdentifiers } from '../types';
+
+import { ConfigurationError, ValidationError } from '../errors/DevGridError';
 import type { IConfigLoader, DevGridContext } from '../interfaces/IConfigLoader';
 import type { ILogger } from '../interfaces/ILogger';
-import { ConfigurationError, ValidationError } from '../errors/DevGridError';
+import type { DevGridFileConfig, DevGridIdentifiers } from '../types';
 
 /**
  * Configuration service implementation
  */
 export class ConfigService implements IConfigLoader {
+  // eslint-disable-next-line no-useless-constructor -- TypeScript parameter properties for dependency injection
   constructor(private logger: ILogger) {}
 
   /**
    * Loads and normalizes DevGrid configuration from the workspace
    */
-  async loadConfig(outputChannel?: { appendLine: (message: string) => void }): Promise<DevGridFileConfig | undefined> {
+  async loadConfig(_outputChannel?: { appendLine: (message: string) => void }): Promise<DevGridFileConfig | undefined> {
     const workspaceFolder = this.getWorkspaceFolder();
     if (!workspaceFolder) {
       this.logger.debug('No workspace folder found');

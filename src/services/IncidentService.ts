@@ -1,7 +1,7 @@
-import type { ILogger } from '../interfaces/ILogger';
-import type { IGraphQLClient } from '../interfaces/IGraphQLClient';
-import type { DevGridIncident } from '../types';
 import { ApiError } from '../errors/DevGridError';
+import type { IGraphQLClient } from '../interfaces/IGraphQLClient';
+import type { ILogger } from '../interfaces/ILogger';
+import type { DevGridIncident } from '../types';
 
 /**
  * GraphQL response interfaces
@@ -26,6 +26,7 @@ interface EntityIncidentsResponse {
  * Incident service for DevGrid incidents
  */
 export class IncidentService {
+  // eslint-disable-next-line no-useless-constructor -- TypeScript parameter properties for dependency injection
   constructor(
     private graphqlClient: IGraphQLClient,
     private logger: ILogger,

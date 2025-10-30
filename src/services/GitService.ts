@@ -1,6 +1,7 @@
-import { promisify } from 'util';
 import { execFile } from 'child_process';
 import * as path from 'path';
+import { promisify } from 'util';
+
 import type { IGitService } from '../interfaces/IGitService';
 import type { ILogger } from '../interfaces/ILogger';
 import { deriveRepositorySlug } from '../utils/urlUtils';
@@ -11,6 +12,7 @@ const execFileAsync = promisify(execFile);
  * Git service implementation
  */
 export class GitService implements IGitService {
+  // eslint-disable-next-line no-useless-constructor -- TypeScript parameter properties for dependency injection
   constructor(private logger: ILogger) {}
 
   /**
@@ -86,7 +88,7 @@ export class GitService implements IGitService {
     try {
       const { stdout } = await execFileAsync('git', args, { cwd, encoding: 'utf8' });
       return stdout.trim();
-    } catch (error) {
+    } catch {
       // Don't throw for git commands that might fail (like not in a git repo)
       // Just return undefined and let the caller handle it
       return undefined;

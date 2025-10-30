@@ -1,11 +1,12 @@
 import type { IDevGridClient } from '../interfaces/IDevGridClient';
 import type { ILogger } from '../interfaces/ILogger';
-import type { EntityResolver } from './EntityResolver';
-import type { VulnerabilityService } from './VulnerabilityService';
-import type { IncidentService } from './IncidentService';
-import type { DependencyService } from './DependencyService';
 import type { DevGridIdentifiers, DevGridInsightBundle, DevGridEntitySummary } from '../types';
 import { renderTemplate } from '../utils/templateUtils';
+
+import type { DependencyService } from './DependencyService';
+import type { EntityResolver } from './EntityResolver';
+import type { IncidentService } from './IncidentService';
+import type { VulnerabilityService } from './VulnerabilityService';
 
 /**
  * DevGrid client service that orchestrates all DevGrid operations
@@ -14,6 +15,7 @@ export class DevGridClientService implements IDevGridClient {
   private statusText = 'DevGrid: Ready';
   private dashboardUrl?: string;
 
+  // eslint-disable-next-line no-useless-constructor -- TypeScript parameter properties for dependency injection
   constructor(
     private entityResolver: EntityResolver,
     private vulnerabilityService: VulnerabilityService,

@@ -1,17 +1,19 @@
-import * as vscode from "vscode";
-import * as path from "path";
 import { promises as fs } from "fs";
+import * as path from "path";
+
 import yaml from "js-yaml";
-import {
-  DevGridFileConfig,
-  DevGridIdentifiers,
-  DevGridProjectComponentConfig,
-} from "./types";
+import * as vscode from "vscode";
+
 import {
   deriveRepositorySlug,
   getRemoteUrl,
   getRepositoryRoot,
 } from "./gitUtils";
+import type {
+  DevGridFileConfig,
+  DevGridIdentifiers,
+  DevGridProjectComponentConfig,
+} from "./types";
 
 const CONFIG_FILE_CANDIDATES = ["devgrid.yaml", "devgrid.yml"];
 
@@ -27,7 +29,7 @@ async function pathExists(candidate: string): Promise<boolean> {
   try {
     await fs.access(candidate);
     return true;
-  } catch (_error) {
+  } catch {
     return false;
   }
 }
@@ -219,10 +221,10 @@ async function normalizeIdentifiers(
   setIfEmpty("applicationSlug", fallback((cfg) => cfg.application_slug));
   setIfEmpty("applicationSlug", fallback((cfg) => cfg.application?.slug));
 
-  const project = config.project;
+  const {project} = config;
   if (project) {
     // Handle both string and numeric appId values
-    const appId = project.appId;
+    const {appId} = project;
     if (appId !== undefined) {
       const appIdString = typeof appId === "string" ? appId : String(appId);
       options.outputChannel?.appendLine(`[DevGrid:config] Found project.appId=${appId} (converted to string: ${appIdString})`);

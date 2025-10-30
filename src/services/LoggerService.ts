@@ -1,5 +1,4 @@
-import type { ILogger } from '../interfaces/ILogger';
-import { LogLevel } from '../interfaces/ILogger';
+import { LogLevel, type ILogger } from '../interfaces/ILogger';
 
 /**
  * Structured logger service implementation

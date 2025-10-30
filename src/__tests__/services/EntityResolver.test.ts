@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { EntityResolver } from '../../services/EntityResolver';
-import type { ILogger } from '../../interfaces/ILogger';
-import type { IGraphQLClient } from '../../interfaces/IGraphQLClient';
+
 import type { IGitService } from '../../interfaces/IGitService';
+import type { IGraphQLClient } from '../../interfaces/IGraphQLClient';
+import type { ILogger } from '../../interfaces/ILogger';
+import { EntityResolver } from '../../services/EntityResolver';
 
 describe('EntityResolver', () => {
   let entityResolver: EntityResolver;

@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
-import { DevGridAuthProvider } from "./authProvider";
+
+import type { DevGridAuthProvider } from "./authProvider";
 
 export interface AuthSession {
   accessToken: string;
@@ -31,8 +32,8 @@ export class AuthService {
         { createIfNone },
       );
       return this.session;
-    } catch (error) {
-      console.error("Failed to get authentication session:", error);
+    } catch {
+      // Session retrieval failed - return undefined to indicate no session available
       return undefined;
     }
   }
@@ -57,16 +58,10 @@ export class AuthService {
       return;
     }
 
-    try {
-      if (this.authProvider) {
-        await this.authProvider.removeSession(session.id);
-      }
-    } catch (error) {
-      console.error("Failed to remove authentication session:", error);
-      throw error;
-    } finally {
-      this.session = undefined;
+    if (this.authProvider) {
+      await this.authProvider.removeSession(session.id);
     }
+    this.session = undefined;
   }
 
   async isAuthenticated(): Promise<boolean> {

@@ -46,7 +46,7 @@ export function extractRepoNameFromUrl(url: string): string | undefined {
     }
     
     return undefined;
-  } catch (error) {
+  } catch {
     return undefined;
   }
 }
@@ -73,7 +73,7 @@ export function deriveRepositorySlug(remoteUrl?: string): string | undefined {
     const parsed = new URL(remoteUrl);
     const slug = parsed.pathname.replace(/^\/+/, '').replace(/\.git$/, '');
     return slug || undefined;
-  } catch (_error) {
+  } catch {
     return undefined;
   }
 }
@@ -121,7 +121,7 @@ export function sanitizeUrlForLogging(url: string): string {
     sanitizedUrl.search = searchParams.toString();
     
     return sanitizedUrl.toString();
-  } catch (error) {
+  } catch {
     // If URL parsing fails, return a generic masked version
     return url.replace(/\/[^/]*[Tt]oken[^/]*/gi, '/***')
               .replace(/\/[^/]*[Kk]ey[^/]*/gi, '/***')

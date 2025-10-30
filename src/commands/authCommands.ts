@@ -1,15 +1,20 @@
 import * as vscode from "vscode";
-import { AuthService } from "../authService";
+
+import type { AuthService } from "../authService";
 
 export function registerAuthCommands(
   context: vscode.ExtensionContext,
   authService: AuthService,
+  onAuthChange?: () => Promise<void>,
 ): void {
   const signInCommand = vscode.commands.registerCommand("devgrid.signIn", async () => {
     try {
       const session = await authService.signIn();
       if (session) {
         await vscode.window.showInformationMessage(`Welcome, ${session.account.label}!`);
+        if (onAuthChange) {
+          await onAuthChange();
+        }
       }
     } catch (error) {
       await vscode.window.showErrorMessage(`Failed to sign in: ${String(error)}`);
@@ -35,6 +40,9 @@ export function registerAuthCommands(
     try {
       await authService.signOut();
       await vscode.window.showInformationMessage("Signed out of DevGrid.");
+      if (onAuthChange) {
+        await onAuthChange();
+      }
     } catch (error) {
       await vscode.window.showErrorMessage(`Failed to sign out: ${String(error)}`);
     }
