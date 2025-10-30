@@ -16,6 +16,15 @@ export interface DevGridEndpointTemplates {
   dependencies?: string;
   dashboardUrl?: string;
   entities?: string;
+  graphql?: string;
+}
+
+export interface DevGridClientOptions {
+  apiBaseUrl: string;
+  accessToken?: string;
+  maxItems: number;
+  endpoints?: DevGridEndpointTemplates;
+  outputChannel?: { appendLine: (message: string) => void };
 }
 
 export interface DevGridProjectComponentConfig {
@@ -61,6 +70,60 @@ export interface DevGridVulnerability {
   versionRange?: string;
   publishedAt?: string;
   referenceUrl?: string;
+}
+
+export interface DevGridVulnerabilityIdentifier {
+  type: string;
+  value: string;
+  url?: string;
+  name?: string;
+  description?: string;
+  publishedDate?: string;
+  cvssScore?: number;
+  vectorString?: string;
+  epssScore?: number;
+  impactScore?: number;
+  exploitabilityScore?: number;
+  attackVector?: string;
+  attackComplexity?: string;
+  weaknesses?: string[];
+  references?: unknown;
+  metrics?: unknown;
+}
+
+export interface DevGridVulnerabilityDetails {
+  id: string;
+  title: string;
+  severity: string;
+  status?: string;
+  packageName?: string;
+  versionRange?: string;
+  publishedAt?: string;
+  referenceUrl?: string;
+  identifiers?: DevGridVulnerabilityIdentifier[];
+  cvss?: {
+    baseScore?: number;
+    vector?: string;
+  };
+  description?: string;
+  remediation?: {
+    fixedVersion?: string;
+    advice?: string;
+  };
+  references?: Array<{
+    title?: string;
+    url: string;
+  }>;
+  originatingSystem?: string;
+  originatingSystemId?: string;
+  originatingSystemUrl?: string;
+  scanType?: string;
+  location?: string;
+  openDate?: string;
+  closeDate?: string;
+  vulnerableId?: string;
+  vulnerableType?: string;
+  attributes?: unknown;
 }
 
 export interface DevGridIncident {

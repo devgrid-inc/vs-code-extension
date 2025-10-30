@@ -1,94 +1,185 @@
-# DevGrid Insights (VS Code Extension)
+# DevGrid: EngOps Insights
 
-DevGrid Insights surfaces details from your DevGrid workspace directly inside VS Code so you always have the current state of the repository, component, and application you are touching. The extension links the open project to DevGrid using `devgrid.yaml` and your Git metadata, then calls the DevGrid APIs to show:
+[![Version](https://img.shields.io/badge/version-0.0.1-blue.svg)](https://marketplace.visualstudio.com/items?itemName=devgrid.devgrid-vscode-extension)
+[![Installs](https://img.shields.io/badge/installs-0+-brightgreen.svg)](https://marketplace.visualstudio.com/items?itemName=devgrid.devgrid-vscode-extension)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-- Repository, component, and application metadata
-- Open vulnerabilities with severity, status, and quick links
-- Recent incidents related to the component
-- Declared dependencies
+**Bring DevGrid's EngOps insights into your IDE.** This extension aggregates operational signals from DevGrid—repository, component, and application context—so engineers can act in flow. Among these insights are security issues (vulnerabilities and incidents), surfaced alongside dependencies and key metadata.
 
-## Getting Started
+## ✨ Key Features
 
-1. **Install dependencies**
+- 📊 **EngOps in Context**: Repository, component, and application insights where you work
+- 🔍 **Aggregated Signals**: Vulnerabilities, incidents, and dependencies side‑by‑side
+- 🤖 **AI-Assisted Actions**: One‑click “Send to Chat” for guided remediation
+- 🏢 **Enterprise Ready**: OAuth auth, secure token storage, configurable endpoints
+- 🔄 **Auto-sync**: Automatic refresh based on workspace changes and Git operations
+- 🎯 **Developer Friendly**: Intuitive tree view with severity-based organization and quick actions
 
-   ```bash
-   npm install
-   ```
+## 🚀 Quick Demo
 
-2. **Compile the extension**
+![Send to Chat Demo](auto-remediation-usinglocalbot.gif)
 
-   ```bash
-   npm run compile
-   ```
+*Send DevGrid context to your preferred chat provider for instant guidance and remediation steps.*
 
-3. Press `F5` in VS Code to launch the extension host for local testing.
+## 📦 Installation
 
-## Configuration
+### From VS Code Marketplace (Recommended)
 
-### API key
+1. Open VS Code
+2. Go to Extensions (`Ctrl+Shift+X` / `Cmd+Shift+X`)
+3. Search for "DevGrid: Security Insights"
+4. Click **Install**
 
-Run the command palette (`⇧⌘P` / `Ctrl+Shift+P`) and execute **DevGrid: Set API Key** to store your key securely using VS Code’s secret storage. Use **DevGrid: Clear API Key** to remove it.
+### From Source (Development)
 
-> **Note:** The legacy workspace setting `DevGrid › Api Key` still acts as a fallback, but it is deprecated because it stores the value in plaintext.
+```bash
+git clone https://github.com/devgrid-inc/vs-code-extension.git
+cd vs-code-extension
+npm install
+npm run compile
+```
 
-### Workspace settings
+Press `F5` to launch the extension development host.
 
-Open VS Code settings (Command Palette → `Preferences: Open Settings (UI)`) to adjust:
+## 🚀 Getting Started
 
-- `DevGrid › Api Base Url` – Defaults to `https://prod.api.devgrid.io`.
-- `DevGrid › Max Items Per Section` – Limits how many list items are rendered in each section (default: `5`).
+### 1. Authentication
 
-### `devgrid.yaml`
+Sign in to connect your DevGrid workspace:
 
-Place a `devgrid.yaml` file at the repository root (or any parent directory). A minimal example:
+1. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
+2. Run **DevGrid: Sign In**
+3. Follow the OAuth flow to authenticate
+
+Your credentials are securely stored by VS Code and automatically refreshed.
+
+### 2. Configuration
+
+#### Workspace Configuration
+
+Create a `devgrid.yaml` file in your project root:
 
 ```yaml
+# DevGrid Workspace Configuration
 apiBaseUrl: https://prod.api.devgrid.io
+
+# Entity Identifiers (optional - auto-detected from Git)
 repository:
-  slug: org/my-service
+  slug: my-org/my-repo
 component:
-  id: comp_abc123
+  id: comp_123456
 application:
-  id: app_xyz789
+  id: app_789012
+
+# Custom Endpoints (optional)
 endpoints:
-  repository: /repositories/{repositorySlug}
-  component: /components/{componentId}
-  application: /applications/{applicationId}
-  vulnerabilities: /vulnerabilities?vulnerableId={componentId}&limit=20
-  incidents: /components/{componentId}/incidents?limit=20
-  dependencies: /components/{componentId}/dependencies?limit=20
-  entities: /entities?shortId={componentSlug}&types=component
   dashboardUrl: https://app.devgrid.io/repos/{repositoryId}
 ```
 
-The identifiers act as fallbacks; the extension will also try to derive `repositorySlug` from the Git remote. Endpoint templates are optional—defaults are supplied—but you can override them to match your DevGrid workspace or self-hosted environment. Placeholders wrapped in braces (e.g. `{componentId}`) are replaced with values discovered from the API or config.
+#### VS Code Settings
 
-> **Identifier merging rules:** the loader accepts `identifiers.*`, root-level fields (`componentId`, `component_id`), or nested objects (`component.id`, `component.slug`, etc.). The first non-empty value wins.
->
-> When `project.components` contains more than one entry, the extension picks the component whose `manifest` (priority) or `api` path exists on disk. Marking a component with `attributes.default: true` breaks ties.
->
-> If only a component short ID is available, the extension calls the DevGrid `/entities` endpoint to resolve the canonical component and repository identifiers before making downstream requests.
+Configure extension behavior in VS Code Settings:
 
-## Commands
+- **DevGrid: API Base URL** - Your DevGrid instance URL (default: `https://prod.api.devgrid.io`)
+- **DevGrid: Max Items Per Section** - Items to display per section (default: `5`)
 
-- **DevGrid: Refresh Insights** – Manually refresh the tree view.
-- **DevGrid: Open Settings** – Jump to the DevGrid settings section.
-- **DevGrid: Open in DevGrid** – Open the Dashboard URL derived from your configuration.
-- **DevGrid: Set API Key** – Save your API key to secure storage.
-- **DevGrid: Clear API Key** – Remove the stored API key.
+## 📋 Usage
 
-## Development Notes
+### Tree View Navigation (EngOps)
 
-- The extension hosts a tree view (`DevGrid Insights`) in the Explorer sidebar.
-- It watches for changes to `devgrid.yaml` and workspace configuration, refreshing automatically.
-- HTTP calls use bearer authentication and the VS Code status bar shows the current sync state.
-- API requests and responses, identifier resolution, and skipped calls are logged to the **DevGrid** output channel (`View → Output`).
+The **DevGrid Insights** panel appears in your Explorer sidebar, showing:
 
-## Publishing
+- 📁 **Repository** - Linked repository metadata and dashboard link
+- 🧩 **Component** - Component details and associated data
+- 🏗️ **Application** - Application information and context
+- 🚨 **Vulnerabilities** – Security issues grouped by severity (Critical, High, Medium, Low)
+- ⚠️ **Incidents** – Operational and security incidents
+- 📦 **Dependencies** – Component dependencies and versions
+
+### Actions & Analysis
+
+Click any vulnerability to open detailed information including:
+
+- Context-rich details: severity, identifiers, status, references
+- **Copy Instructions** – Generate a prompt with DevGrid context
+- **Send to Chat** – Open AI chat with a pre-filled remediation ask
+
+### Keyboard Shortcuts
+
+- `Ctrl+Shift+P` → "DevGrid: Refresh Insights" - Manual sync
+- `Ctrl+Shift+P` → "DevGrid: Open Settings" - Extension configuration
+
+## 🔧 Commands Reference
+
+| Command | Description |
+|---------|-------------|
+| **DevGrid: Sign In** | Authenticate with DevGrid |
+| **DevGrid: Sign Out** | Clear authentication session |
+| **DevGrid: Show Account** | Display current account status |
+| **DevGrid: Refresh Insights** | Manually refresh all data |
+| **DevGrid: Open Settings** | Jump to extension settings |
+| **DevGrid: Open in DevGrid** | Open repository in DevGrid dashboard |
+
+## 🔒 Privacy & Security
+
+- **Secure Authentication**: OAuth 2.0 with secure token storage via VS Code secrets
+- **No Data Persistence**: Extension only caches data in memory during sessions
+- **Network Security**: All API calls use HTTPS with bearer tokens
+- **Privacy First**: No telemetry or usage data collected
+- **Enterprise Ready**: Supports custom DevGrid instances and self-hosted deployments
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**"No DevGrid insights available"**
+- Ensure you're signed in (`DevGrid: Sign In`)
+- Check that `devgrid.yaml` exists or Git remote is properly configured
+- Verify API connectivity in DevGrid Output channel
+
+**"Vulnerability not found"**
+- Click refresh or check DevGrid Output for API errors
+- Ensure component/repository linkage is correct
+
+**"Authentication failed"**
+- Re-run `DevGrid: Sign In`
+- Check network connectivity to DevGrid instance
+
+### Debug Information
+
+Enable detailed logging:
+
+1. Open Command Palette → "Developer: Toggle Developer Tools"
+2. Check Console and Network tabs for errors
+3. View DevGrid logs: `View → Output → DevGrid`
+
+## 🤝 Support & Contributing
+
+- 📖 **Documentation**: [DevGrid Docs](https://devgrid.io/docs)
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/devgrid-inc/vs-code-extension/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/devgrid-inc/vs-code-extension/discussions)
+- 📧 **Enterprise Support**: Contact your DevGrid representative
+
+### Development
 
 ```bash
+# Setup
+npm install
 npm run compile
-vsce package
+
+# Testing
+npm test
+npm run test:watch
+
+# Publishing
+npm run package
+vsce publish
 ```
 
-Upload the generated `.vsix` to the VS Code Marketplace or distribute it internally.
+## 📄 License
+
+This extension is licensed under the [MIT License](LICENSE).
+
+---
+
+**DevGrid** – Engineering Operations Intelligence

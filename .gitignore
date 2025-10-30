@@ -4,3 +4,17 @@ dist/
 *.log
 out/
 .DS_Store
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Vitest
+.vitest/
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# OS
+Thumbs.db

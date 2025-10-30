@@ -1,0 +1,2764 @@
+"""Exposes a URL that specifies the behavior of this scalar."""
+directive @specifiedBy(
+  """The URL that specifies the behavior of this scalar."""
+  url: String!
+) on SCALAR
+
+"""
+Indicates exactly one field must be supplied and this field must not be `null`.
+"""
+directive @oneOf on INPUT_OBJECT
+
+type Account {
+  id: ID!
+  name: String
+  shortId: String
+  config: Config
+  defaultUserRoleId: String
+  defaultUserRole: Role
+}
+
+type ActivityTimelineDay {
+  day: String!
+  events: [ActivityTimelineEvent!]!
+  totalEvents: Int!
+}
+
+type ActivityTimelineEvent {
+  id: ID!
+  type: String!
+  entity: ActivityTimelineEventEntity
+  timestamp: Float!
+}
+
+type ActivityTimelineEventEntity {
+  id: ID!
+  name: String!
+  type: String!
+}
+
+enum AllowedType {
+  string
+  integer
+  boolean
+}
+
+type Api {
+  id: ID!
+  name: String!
+  description: String
+  version: String
+  status: String!
+  linkedEntities: [String]
+  spec: JSON
+  runtimeData: JSON
+  domainModel: JSON
+  complianceReports: [ComplianceReport]
+  createdAt: String
+  updatedAt: String
+}
+
+input ApiFilter {
+  name: String
+  status: String
+  version: String
+}
+
+input ApiInput {
+  name: String!
+  description: String
+  version: String
+  status: String
+  linkedEntities: [String]
+  spec: JSON
+  runtimeData: JSON
+  domainModel: JSON
+}
+
+type APIKey {
+  id: ID!
+  name: String!
+  value: String!
+  description: String
+  enabled: Boolean!
+  tags: APIKeyTags
+}
+
+input APIKeyInput {
+  name: String!
+  description: String
+  tags: APIKeyTagsInput
+  enabled: Boolean
+}
+
+type APIKeyTags {
+  scope: String
+}
+
+input APIKeyTagsInput {
+  scope: String
+}
+
+input ApiUpdateInput {
+  name: String
+  description: String
+  version: String
+  status: String
+  linkedEntities: [String]
+  spec: JSON
+  runtimeData: JSON
+  domainModel: JSON
+}
+
+type Application implements EntityInterface {
+  id: ID!
+  type: String!
+  name: String!
+  shortId: String!
+  accountId: String!
+  description: String
+  attributes: [EntityAttribute!]!
+  relationships(types: [String]): [Relationship!]!
+  blueprint: Blueprint
+  rollup(queries: [RollupQuery]!): [Rollup]
+  vulnerabilities: [Vulnerability]
+  deployments: [Deployments]!
+  activity(lookbackDays: Int): EntityActivity
+  score(journeyId: ID): Int
+  journeys(filter: JourneyFilter, pagination: Pagination, orderBy: OrderBy): [Journey]
+  mappings: [Mapping]
+  createdAt: String
+  updatedAt: String
+}
+
+input ApplicationFilter {
+  id: [ID!]
+  name: NameSearch
+  relationships: [RelationshipFilter!]
+  attributes: [AttributeFilter!]
+}
+
+input ApplicationInput {
+  name: String!
+  shortId: String
+  description: String
+  status: String
+  attributes: JSONObject!
+}
+
+type ApplicationInventory {
+  application: Entity
+  componentCount: Int
+}
+
+input AttributeFilter {
+  field: String!
+  value: String!
+}
+
+type AttributeUniqueValues {
+  field: String!
+  values: [JSON]
+  isHighCardinality: Boolean
+  uniqueCount: Int
+}
+
+type AzureDevOpsMeta {
+  organization: String!
+  baseUrl: String
+}
+
+input AzureDevOpsMetaInput {
+  organization: String
+  baseUrl: String
+}
+
+type BitBucketDataCenterMeta {
+  concurrency: Int
+  baseUrl: String!
+  userName: String!
+}
+
+input BitBucketDataCenterMetaInput {
+  concurrency: Int
+  baseUrl: String!
+  userName: String!
+}
+
+type BitBucketMeta {
+  baseUrl: String
+  userName: String
+  password: String
+}
+
+input BitBucketMetaInput {
+  concurrency: Int!
+  baseUrl: String!
+  userName: String!
+  password: String!
+}
+
+type Blueprint {
+  id: ID!
+  name: String
+  shortId: String
+  type: String
+  schema: [BlueprintSchema]
+  accountId: String
+  fromTypeShortIds: [String]
+  toTypeShortIds: [String]
+  fromTypes: [Blueprint]
+  toTypes: [Blueprint]
+}
+
+input BlueprintFilter {
+  type: String
+  shortID: String
+  shortIds: [String]
+}
+
+input BlueprintInput {
+  name: String!
+  type: BlueprintType!
+  schema: [BlueprintSchemaInput]!
+  fromTypeShortIds: [String!]
+  toTypeShortIds: [String!]
+}
+
+type BlueprintSchema {
+  name: String
+  label: String
+  type: StringOrStringArray!
+  required: Boolean
+  possibleValues: [PossibleValue]
+  defaultValue: StringNumberBool
+  parentAttribute: Boolean
+}
+
+input BlueprintSchemaInput {
+  name: String!
+  label: String!
+  type: StringOrStringArray!
+  possibleValues: [PossibleValueInput]
+  defaultValue: StringNumberBool
+  required: Boolean!
+}
+
+enum BlueprintType {
+  entity
+  relationship
+  event
+}
+
+input BlueprintUpdateInput {
+  name: String
+  type: BlueprintType
+  schema: [BlueprintSchemaInput]
+  fromTypeShortIds: [String]
+  toTypeShortIds: [String]
+}
+
+type CheckmarxDCMeta {
+  baseUrl: String!
+  userName: String!
+}
+
+input CheckmarxDCMetaInput {
+  baseUrl: String!
+  userName: String!
+}
+
+type CheckmarxMeta {
+  baseUrl: String!
+  authUrl: String!
+  clientId: String!
+  tenantName: String!
+  clientSecret: String!
+}
+
+input CheckmarxMetaInput {
+  baseUrl: String!
+  authUrl: String!
+  clientId: String!
+  tenantName: String!
+}
+
+enum CheckState {
+  SUCCESS
+  FAILURE
+  PENDING
+  ERROR
+}
+
+type CombinedCounts {
+  journeysCount: ItemCount
+  journeyRunsCount: ItemCount
+  journeyRuleResultsCount: JourneyRuleResultsCount
+  entityCount: EntityCount
+}
+
+enum CommentType {
+  ISSUE_COMMENT
+  REVIEW_COMMENT
+  INLINE_COMMENT
+}
+
+type Commit {
+  id: String!
+  message: String
+  url: String
+  committerName: String
+  committerEmail: String
+  committedDate: String!
+  additions: String!
+  deletions: String!
+  total: String!
+  committerId: String!
+  repoId: String
+  system: String
+  systemId: String
+  raw: JSON
+  person: Entity
+  repo: Repo
+}
+
+type CommitByDate {
+  date: String!
+  count: Int!
+}
+
+type CommitConnection {
+  items: [Commit!]!
+  pageInfo: PageInfo!
+}
+
+input CommitFilter {
+  personId: ID
+  repoId: ID
+  committedDateFrom: String
+  committedDateTo: String
+}
+
+type CommitPercentage {
+  component: Entity!
+  percentage: Float!
+}
+
+type Committer {
+  id: ID!
+  name: String!
+  email: String
+}
+
+type ComplianceReport {
+  id: ID!
+  apiId: ID!
+  api: Api
+  policyId: ID!
+  policy: Policy
+  status: String!
+  failedRules: JSON
+  createdAt: String
+  updatedAt: String
+}
+
+input ComplianceReportFilter {
+  apiId: ID
+  policyId: ID
+  status: String
+}
+
+type Component implements EntityInterface {
+  id: ID!
+  type: String!
+  name: String!
+  shortId: String!
+  accountId: String!
+  description: String
+  attributes: [EntityAttribute!]!
+  relationships(types: [String]): [Relationship!]!
+  blueprint: Blueprint
+  rollup(queries: [RollupQuery]!): [Rollup]
+  vulnerabilities: [Vulnerability]
+  deployments: [Deployments]! @deprecated(reason: "Use application.deployments instead")
+  mappings: [Mapping]
+  createdAt: String
+  updatedAt: String
+}
+
+type Config {
+  chat: Boolean
+  vuln: Boolean
+  repos: Boolean
+  maturity: Boolean
+}
+
+type ConsolidationResult {
+  primaryEntityId: String!
+  consolidatedEntityIds: [String!]!
+  transferredRelationships: Int!
+  mergedAttributes: Int!
+  nameUpdated: Boolean!
+  errors: [String!]
+}
+
+input CreateAccountInput {
+  name: String!
+}
+
+input CreateJourneyCheckInput {
+  name: String!
+  description: String
+  key: String!
+  configRules: JSON
+  multiple: Boolean
+}
+
+input CreateJourneyInput {
+  name: String!
+  allApplications: Boolean
+  applicationIds: [String]
+  description: String
+}
+
+input CreateJourneyRuleInput {
+  configuration: JSON
+  scoring: JSON
+  journeyCheckId: String!
+  journeyId: String!
+}
+
+input CreateResourceInput {
+  providerAssignedId: String!
+  resourceType: ResourceType!
+  provider: Provider!
+  service: Service
+  name: String
+  displayName: String
+  region: String
+  zone: String
+  status: ResourceStatus
+  tags: JSON
+  creationTimestamp: String
+  lastModifiedTimestamp: String
+  discoveredTimestamp: String!
+  lastSeenTimestamp: String!
+  parentResourceId: ID
+  componentId: ID!
+  additionalUniversalAttributes: JSON
+  providerSpecificDetails: JSON
+}
+
+type CurrentValue {
+  metricId: ID!
+  subjectType: MetricsSubjectType!
+  subjectId: ID!
+  ts: Date!
+  value: Float!
+}
+
+"""ISO-8601 date string"""
+scalar Date
+
+input DateRange {
+  from: String
+  to: String
+}
+
+type DeduplicationResult {
+  duplicateGroupsFound: Int!
+  entitiesConsolidated: Int!
+  relationshipsTransferred: Int!
+  namesUpdated: Int!
+  errors: [String!]!
+  dryRun: Boolean!
+  consolidations: [ConsolidationResult!]!
+  duration: Int!
+}
+
+enum DeduplicationStrategy {
+  NEWEST
+  MOST_RELATIONSHIPS
+  MOST_COMPLETE
+}
+
+type DeplopmentEnvs {
+  envs: [String]
+}
+
+type Deployment {
+  id: ID!
+}
+
+input DeploymentFilter {
+  applicationId: String
+  portfolioId: String
+  componentId: String
+  status: String
+  env: String
+  teamId: String
+  type: String
+}
+
+type Deployments {
+  entity: Entity!
+  deployment: [Deployment!]!
+}
+
+type DeploymentsSummary {
+  period: String
+  count: Int
+}
+
+type DescendantInfo {
+  descendantId: ID!
+  depth: Int!
+}
+
+type DevelopedBySummary {
+  developedBy: String
+  count: Int
+}
+
+type DeveloperMetrics {
+  personId: ID!
+  personName: String!
+  personEmail: String
+  employmentType: String
+  locationId: ID
+  locationName: String
+  commitCount: Int!
+  totalAdditions: Int!
+  totalDeletions: Int!
+  totalChanges: Int!
+  prAuthoredCount: Int!
+  prMergedCount: Int!
+  prAuthoredApprovedCount: Int!
+  avgPrCommits: Float!
+  avgPrLines: Float!
+  avgCodingDays: Float
+  avgPrApprovalHours: Float
+  reviewsPerformedCount: Int!
+  prsReviewedCount: Int!
+  reviewsApprovedCount: Int!
+  reviewsChangesRequestedCount: Int!
+  prCommentsMadeCount: Int!
+  prsCommentedOnCount: Int!
+  mergeRate: Float!
+}
+
+input DeveloperMetricsFilter {
+  startDate: String
+  endDate: String
+  personId: ID
+  employmentType: String
+  locationId: ID
+  includeInactive: Boolean
+}
+
+type DuplicateDetectionResult {
+  totalDuplicates: Int!
+  duplicateGroups: [DuplicateGroup!]!
+}
+
+type DuplicateGroup {
+  email: String
+  corporateId: String
+  entityCount: Int!
+  entities: [Person!]!
+}
+
+type Entity implements EntityInterface {
+  id: ID!
+  type: String!
+  name: String!
+  shortId: String!
+  accountId: String!
+  description: String
+  attributes: [EntityAttribute!]!
+  relationships(types: [String]): [Relationship!]!
+  blueprint: Blueprint
+  rollup(queries: [RollupQuery]!): [Rollup]
+  activity(lookbackDays: Int): EntityActivity
+  mappings: [Mapping]
+  createdAt: String
+  updatedAt: String
+}
+
+type EntityActivity {
+  updatedApplications: Int
+  updatedComponents: Int
+}
+
+type EntityAttribute {
+  field: String
+  value: JSON
+}
+
+input EntityAttributeUpdateInput {
+  field: String!
+  value: StringNumberBool
+}
+
+type EntityCount {
+  count: Int!
+}
+
+input EntityFilter {
+  type: [String!]
+  typeEq: String
+  id: [ID!]
+  name: NameSearch
+  relationships: [RelationshipFilter!]
+  relatedTo: RelatedToFilter
+  attributes: [AttributeFilter!]
+}
+
+input EntityInput {
+  type: String!
+  name: String!
+  shortId: String
+  description: String
+  status: String
+  attributes: JSONObject!
+}
+
+interface EntityInterface {
+  id: ID!
+  type: String!
+  name: String!
+  shortId: String!
+  accountId: String!
+  description: String
+  attributes: [EntityAttribute!]!
+  relationships(types: [String]): [Relationship!]!
+  blueprint: Blueprint
+  mappings: [Mapping]
+  createdAt: String
+  updatedAt: String
+}
+
+input EntityUpdateInput {
+  name: String
+  description: String
+  status: String
+  attributes: JSONObject!
+}
+
+type Event {
+  id: ID!
+  type: String!
+  attributes: JSON
+  timestamp: String!
+  entityId: String
+  entity: Entity
+}
+
+input EventFilter {
+  entityId: [String]
+  type: [String]
+  timestamp: [String]
+}
+
+input EventInput {
+  type: String!
+  timestamp: String
+  attributes: JSON
+  entityId: String
+}
+
+enum ExportFormat {
+  NONE
+  CSV
+}
+
+type Fact {
+  id: ID!
+  seriesId: ID!
+  ts: Date!
+  value: Float!
+}
+
+type FeatureFlag {
+  _variant: String!
+  enabled: Boolean!
+}
+
+type FeatureFlagEntry {
+  key: String!
+  value: FeatureFlag!
+}
+
+type File {
+  id: ID
+  status: String
+  ext: String
+  sizes: [FileSize]
+  url(size: FileSizeInput): String
+  putObjectUrl: String
+  uploader: User
+  description: String
+  type: FileType!
+  createdAt: String!
+}
+
+enum FileChangeType {
+  ADDED
+  REMOVED
+  MODIFIED
+  RENAMED
+}
+
+type FileSize {
+  width: Int
+  height: Int
+}
+
+input FileSizeInput {
+  width: Int
+  height: Int
+}
+
+enum FileType {
+  image
+  people_upload
+}
+
+type FlatDevMetrics {
+  personId: ID!
+  personName: String!
+  personAttributes: [EntityAttribute]
+  locationId: ID
+  locationName: String
+  commitCount: Int!
+  prCount: Int!
+  addedLines: Int!
+  deletedLines: Int!
+  totalLinesChanged: Int!
+  activeDays: Int!
+  activeDaysPerWeek: Float!
+  managers: [Manager]
+  maxManagerLevel: Int!
+}
+
+input FlatDevMetricsFilter {
+  query: String
+  locationId: ID
+  managerId: ID
+  startDate: String
+  endDate: String
+  attributes: [AttributeFilter!]
+}
+
+type GithubMeta {
+  since: String
+  baseUrl: String
+  organizations: [String!]
+}
+
+input GithubMetaInput {
+  since: String!
+  baseUrl: String!
+  organizations: [String!]!
+}
+
+type GitlabMeta {
+  group: String!
+  groupId: String!
+}
+
+input GitlabMetaInput {
+  group: String!
+  groupId: String!
+}
+
+type Incident {
+  id: ID!
+  externalSystemId: String!
+  externalSystem: String!
+  externalIncidentNumber: String!
+  title: String!
+  description: String!
+  state: IncidentState!
+  impact: Int!
+  urgency: Int!
+  priority: Int!
+  severity: IncidentSeverity
+  category: String
+  subcategory: String
+  detectedAt: String
+  reportedAt: String!
+  acknowledgedAt: String
+  resolvedAt: String
+  closedAt: String
+  closeNotes: String
+  parentId: ID
+  tags: [String!]
+  customFields: JSON
+  accountId: ID!
+  affectedApplications: [Entity!]!
+  parentIncident: Incident
+  childIncidents: [Incident!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type IncidentCount {
+  count: Int!
+}
+
+input IncidentFilter {
+  id: [ID!]
+  externalSystemId: [String!]
+  externalSystem: [String!]
+  externalIncidentNumber: [String!]
+  title: NameSearch
+  description: NameSearch
+  state: [IncidentState!]
+  impact: [Int!]
+  urgency: [Int!]
+  priority: [Int!]
+  severity: [IncidentSeverity!]
+  category: [String!]
+  subcategory: [String!]
+  detectedAt: DateRange
+  reportedAt: DateRange
+  acknowledgedAt: DateRange
+  resolvedAt: DateRange
+  closedAt: DateRange
+  closeNotes: NameSearch
+  affectedApplicationIds: [ID!]
+  parentId: [ID!]
+  tags: [String!]
+  createdAt: DateRange
+  updatedAt: DateRange
+}
+
+input IncidentInput {
+  externalSystemId: String!
+  externalSystem: String!
+  externalIncidentNumber: String!
+  title: String!
+  description: String!
+  state: IncidentState
+  impact: Int!
+  urgency: Int!
+  priority: Int!
+  severity: IncidentSeverity
+  category: String
+  subcategory: String
+  detectedAt: String
+  reportedAt: String
+  acknowledgedAt: String
+  resolvedAt: String
+  closedAt: String
+  closeNotes: String
+  affectedApplicationIds: [ID!]
+  parentId: ID
+  tags: [String!]
+  customFields: JSON
+}
+
+type IncidentOpenIssues {
+  P0: Int
+  P1: Int
+  P2: Int
+  P3: Int
+  P4: Int
+  P5: Int
+}
+
+enum IncidentSeverity {
+  P0
+  P1
+  P2
+  P3
+  P4
+  P5
+}
+
+type IncidentSeverityCount {
+  state: IncidentState!
+  severity: IncidentSeverity!
+  count: Int!
+}
+
+enum IncidentState {
+  new
+  in_progress
+  on_hold
+  resolved
+  closed
+  canceled
+  reopened
+}
+
+type IncidentSummary {
+  openIssues: IncidentOpenIssues
+  counts: [IncidentSeverityCount]
+}
+
+input IncidentSummaryFilter {
+  affectedApplicationIds: [ID!]
+}
+
+input IncidentUpdateInput {
+  externalSystemId: String
+  externalSystem: String
+  externalIncidentNumber: String
+  title: String
+  description: String
+  state: IncidentState
+  impact: Int
+  urgency: Int
+  priority: Int
+  severity: IncidentSeverity
+  category: String
+  subcategory: String
+  detectedAt: String
+  reportedAt: String
+  acknowledgedAt: String
+  resolvedAt: String
+  closedAt: String
+  closeNotes: String
+  affectedApplicationIds: [ID!]
+  parentId: ID
+  tags: [String!]
+  customFields: JSON
+}
+
+input IngestFactInput {
+  metricId: ID!
+  subjectType: MetricsSubjectType!
+  subjectId: ID!
+  ts: Date!
+  value: Float!
+}
+
+type Insight {
+  id: ID!
+  type: String!
+  text: String!
+  rating: String
+  readAt: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+input InsightFilter {
+  type: String
+  read: Boolean
+}
+
+type Integration {
+  id: ID!
+  name: String!
+  status: String!
+  validated: Boolean
+  meta: IntegrationMeta
+  secrets: [Secret]
+}
+
+input IntegrationFilter {
+  name: NameSearch
+}
+
+input IntegrationInput {
+  name: String!
+  status: String
+  meta: IntegrationMetaInput
+  secrets: [SecretInput]
+}
+
+type IntegrationLog {
+  id: ID!
+  message: String!
+  status: String!
+  integrationId: String!
+  createdAt: String!
+}
+
+input IntegrationLogFilter {
+  status: String
+  integrationId: String
+}
+
+type IntegrationMeta {
+  key: String
+  gitlabGroup: String
+  gitlabGroupId: String
+  gitlab: GitlabMeta
+  azuredevops: AzureDevOpsMeta
+  checkmarx: CheckmarxMeta
+  github: GithubMeta
+  bitbucket: BitBucketMeta
+  checkmarxDataCenter: CheckmarxDCMeta
+  bitbucketDataCenter: BitBucketDataCenterMeta
+}
+
+input IntegrationMetaInput {
+  azuredevops: AzureDevOpsMetaInput
+  checkmarx: CheckmarxMetaInput
+  github: GithubMetaInput
+  bitbucket: BitBucketMetaInput
+  gitlab: GitlabMetaInput
+  checkmarxDataCenter: CheckmarxDCMetaInput
+  bitbucketDataCenter: BitBucketDataCenterMetaInput
+}
+
+type InventoryStatusSummary {
+  lifecycleStatus: String
+  count: Int
+}
+
+type InventorySummary {
+  developedBySummary: [DevelopedBySummary]
+  tierSummary: [TierSummary]
+  lifecycleStatusSummary: [InventoryStatusSummary]
+  deploymentsSummary: [DeploymentsSummary]
+  portfolioSummary: [PortfolioInventorySummary]
+  applicationSummary: [ApplicationInventory]
+}
+
+type ItemCount {
+  itemCount: Int
+}
+
+type Journey {
+  id: String!
+  name: String!
+  description: String
+  allApplications: Boolean!
+  active: Boolean!
+  ownerId: String!
+  createdAt: String
+  updatedAt: String
+  applicationCount: Int
+  journeyRunCount: String
+  highestScore: Int
+  overallScore: Int
+  latestApplicationScore(applicationId: ID!): Int
+  checkCount: String
+  journeyRuns(limit: Int, offset: Int, applicationId: ID): PaginatedJourneyRuns
+  journeyRules: [JourneyRule]
+}
+
+input JourneyApplicationsFilter {
+  journeyId: ID!
+  name: NameSearch
+  relationships: [RelationshipFilter!]
+}
+
+type JourneyApplicationSummary {
+  application: Application
+  applicationSummary: [JourneySummary]
+}
+
+input JourneyApplicationSummaryFilter {
+  journeyId: ID!
+  portfolioId: ID
+  ownerId: ID
+  teamId: ID
+}
+
+type JourneyCheck {
+  id: String!
+  name: String!
+  description: String
+  key: String!
+  multiple: Boolean!
+  configRules: JSON
+  createdAt: String
+  updatedAt: String
+}
+
+input JourneyCheckFilter {
+  id: [String]
+  name: String
+  key: String
+}
+
+type JourneyCheckSummary {
+  check: JourneyCheck
+  checkSummary: [JourneySummary]
+  journeyRule: JourneyRule
+}
+
+input JourneyCheckSummaryFilter {
+  journeyId: ID!
+  applicationId: ID
+  ownerId: ID
+  teamId: ID
+}
+
+input JourneyFilter {
+  id: [String]
+  name: NameSearch
+  ownerId: String
+  allApplications: Boolean
+  applicationIds: [ID]
+}
+
+type JourneyPortfolioSummary {
+  portfolio: Entity
+  portfolioSummary: [JourneySummary]
+}
+
+type JourneyRule {
+  id: String!
+  configuration: JSON
+  scoring: JSON
+  journeyCheckId: String!
+  journeyId: String!
+  createdAt: String
+  updatedAt: String
+  journeyCheck: JourneyCheck
+}
+
+input JourneyRuleFilter {
+  id: [String]
+  journeyCheckId: String
+  journeyId: String
+}
+
+type JourneyRuleResult {
+  id: String!
+  success: Boolean!
+  score: Int!
+  value: String
+  logging: JSON
+  journeyRuleId: String!
+  journeyRunId: String!
+  createdAt: String
+  updatedAt: String
+  journeyRule: JourneyRule
+}
+
+input JourneyRuleResultFilter {
+  id: [String]
+  success: Boolean
+  score: Int
+  value: String
+  ruleId: String
+  runId: String
+}
+
+type JourneyRuleResults {
+  id: String!
+  journeyRuleId: String
+  journeyRunId: String
+  success: Boolean
+  score: Int
+  value: String
+}
+
+type JourneyRuleResultsCount {
+  highScore: Int
+}
+
+type JourneyRun {
+  id: String!
+  status: String!
+  journeyId: String!
+  applicationId: String!
+  possibleScoreAggregate: Int!
+  scoreAggregate: Int
+  createdAt: String
+  updatedAt: String
+  journeyRuleResults: [JourneyRuleResult]
+  application: Application
+}
+
+input JourneyRunFilter {
+  id: [String]
+  status: String
+  journeyId: String
+  applicationId: String
+  fromDate: String
+  toDate: String
+}
+
+type JourneySummary {
+  weekStartDate: String
+  numberOfApplications: Int
+  numberOfRuns: Int
+  averageScore: Int
+  minimumScore: Int
+  maximumScore: Int
+  standardDeviation: Int
+}
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+"""
+The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSONObject
+
+type Manager {
+  id: ID!
+  name: String!
+  level: Int!
+}
+
+type ManagerMetrics {
+  personId: ID!
+  personName: String!
+  activeContributors: Int!
+  commits: Float!
+  personalCommits: Int!
+  pullRequests: Float!
+  personalPullRequests: Int!
+  addedLines: Float!
+  personalAddedLines: Int!
+  deletedLines: Float!
+  personalDeletedLines: Int!
+  totalLinesChanged: Float!
+  personalTotalLinesChanged: Int!
+  codingDays: Float!
+  personalCodingDays: Int!
+  teamWeeklyActiveDays: Float!
+  personalWeeklyActiveDays: Float!
+  teamSize: Int!
+}
+
+input ManagerMetricsFilter {
+  startDate: String
+  endDate: String
+  managerId: ID
+  managerName: String
+  includeIndirectReports: Boolean
+}
+
+enum MappableType {
+  entity
+  component
+  repository
+  application
+  blueprint
+}
+
+type Mapping {
+  id: ID!
+  mappableId: ID!
+  mappableType: String!
+  mappableObject: Entity
+  sourceSystem: String!
+  sourceSystemId: String!
+  status: String!
+  accountId: ID!
+  createdAt: String
+  updatedAt: String
+}
+
+input MappingFilter {
+  mappableId: [ID!]
+  mappableType: [String!]
+  sourceSystem: [String!]
+  sourceSystemId: [String!]
+  status: String
+}
+
+input MappingInput {
+  mappableId: ID!
+  mappableType: String!
+  sourceSystem: String!
+  sourceSystemId: String!
+  status: String
+}
+
+input MappingUpdateInput {
+  mappableId: ID
+  mappableType: String
+  sourceSystem: String
+  sourceSystemId: String
+  status: String
+}
+
+enum MergeStatus {
+  SUCCEEDED
+  CONFLICTS
+  QUEUED
+  NOT_SET
+  FAILED
+}
+
+enum MergeStrategy {
+  SQUASH
+  REBASE
+  MERGE
+  FAST_FORWARD
+}
+
+type Metric {
+  id: ID!
+  key: String!
+  name: String!
+  unit: String!
+  createdAt: Date!
+}
+
+type MetricConnection {
+  items: [Metric!]!
+  total: Int!
+  pageInfo: PageInfo
+}
+
+type MetricDaily {
+  day: Date!
+  metricId: ID!
+  subjectType: MetricsSubjectType!
+  subjectId: ID!
+  n: Int!
+  sumVal: Float
+  minVal: Float
+  maxVal: Float
+  avgVal: Float
+  p50: Float
+  p95: Float
+}
+
+type MetricDailyConnection {
+  items: [MetricDaily!]!
+  total: Int!
+}
+
+union MetricsSubject = Entity | Repo
+
+enum MetricsSubjectType {
+  ENTITY
+  REPO
+}
+
+type MultipleRelationshipFailure {
+  relationship: Relationship!
+  error: String!
+}
+
+type MultipleRelationshipResult {
+  success: [Relationship!]!
+  failed: [MultipleRelationshipFailure!]!
+}
+
+type Mutation {
+  createAccount(input: CreateAccountInput!): Account
+  updateAccount(id: ID!, input: UpdateAccountInput!): Account
+  createApi(input: ApiInput!): Api
+  updateApi(id: ID!, input: ApiUpdateInput!): Api
+  deleteApi(id: ID!): Api
+  validateApi(id: ID!, policyId: ID!): ComplianceReport
+  createAPIKey(input: APIKeyInput!): APIKey
+  updateAPIKey(id: ID!, input: APIKeyInput!): APIKey
+  deleteAPIKey(id: ID): APIKey
+  createBlueprint(input: BlueprintInput!): Blueprint
+  updateBlueprint(id: ID!, input: BlueprintUpdateInput!): Blueprint
+  deleteBlueprint(id: ID!): Blueprint
+  createJourneyCheck(input: CreateJourneyCheckInput!): JourneyCheck
+  updateJourneyCheck(input: UpdateJourneyCheckInput!): JourneyCheck
+  deleteJourneyCheck(id: ID!): JourneyCheck
+  createFile(ext: String, description: String, type: FileType!): File
+  deleteFile(id: ID): File
+  updateFile(id: ID, size: FileSizeInput, description: String): File
+  createResource(input: CreateResourceInput!): Resource!
+  updateResource(id: ID!, input: UpdateResourceInput!): Resource!
+  deleteResource(id: ID!): Boolean!
+  createEntity(input: EntityInput!): Entity
+  updateEntity(id: ID!, input: EntityUpdateInput!): Entity
+  updateEntityAttribute(id: ID!, input: EntityAttributeUpdateInput!): Entity
+  deleteEntity(id: ID!): Entity
+  createMapping(input: MappingInput!): Mapping
+  updateMapping(id: ID!, input: MappingUpdateInput!): Mapping
+  deleteMapping(id: ID!): Mapping
+  createApplication(input: ApplicationInput!): Application
+  updateApplication(id: ID!, input: EntityUpdateInput!): Application
+  deleteApplication(id: ID!): Application
+  createEvent(input: EventInput!): Event
+  updateEvent(id: ID, input: EventInput!): Event
+  deleteEvent(id: ID): Event
+  createIncident(input: IncidentInput!): Incident!
+  updateIncident(id: ID!, input: IncidentUpdateInput!): Incident!
+  deleteIncident(id: ID!): Incident!
+  createIntegration(input: IntegrationInput!): Integration
+  updateIntegration(id: ID, input: IntegrationInput!): Integration
+  deleteIntegration(id: ID): Integration
+  createJourney(input: CreateJourneyInput!): Journey
+  updateJourney(id: ID!, input: UpdateJourneyInput!): Journey
+  deleteJourney(id: ID!): Journey
+  runJourney(id: ID!): Boolean
+  deleteJourneyRun(id: ID!): JourneyRun
+  markNotificationAsRead(id: ID!): Notification
+  deleteNotification(id: ID): Notification
+  createPermission(input: PermissionInput!): Permission!
+  updatePermission(id: ID!, input: PermissionInput!): Permission!
+  deletePermission(id: ID!): Permission!
+  createPerson(input: PersonInput!): Person
+  updatePerson(id: ID, input: PersonInput!): Person
+  deletePerson(id: ID): Person
+  createPolicy(input: PolicyInput!): Policy
+  updatePolicy(id: ID!, input: PolicyUpdateInput!): Policy
+  deletePolicy(id: ID!): Policy
+  createRelationship(input: RelationshipInput!): Relationship
+  createManyRelationships(input: [RelationshipInput!]!): MultipleRelationshipResult
+  updateRelationship(id: ID, input: RelationshipInput!): Relationship
+  deleteRelationship(id: ID): Relationship
+  createRepo(input: RepoInput!): Repo
+  updateRepo(id: ID, input: RepoInput!): Repo
+  deleteRepo(id: ID): Repo
+  addComponentToRepo(repoId: ID!, componentId: ID!): Repo
+  removeComponentFromRepo(repoId: ID!, componentId: ID!): Repo
+  createRole(input: RoleInput!): Role!
+  updateRole(id: ID!, input: RoleInput!): Role!
+  deleteRole(id: ID!): Role!
+  createJourneyRule(input: CreateJourneyRuleInput!): JourneyRule
+  updateJourneyRule(id: ID!, input: UpdateJourneyRuleInput!): JourneyRule
+  deleteJourneyRule(id: ID!): JourneyRule
+  createRule(input: RuleInput!): Rule
+  updateRule(id: ID!, input: RuleUpdateInput!): Rule
+  deleteRule(id: ID!): Rule
+  deleteJourneyRuleResult(id: ID!): JourneyRuleResult
+  createSecret(input: SecretInput!): Secret!
+  updateSecret(id: ID!, input: SecretInput!): Secret!
+  deleteSecret(id: ID!): Secret!
+  deduplicatePeople(dryRun: Boolean, strategy: DeduplicationStrategy, sourceData: [SourcePersonInput!]): DeduplicationResult!
+  updatePeopleNames(sourceData: [SourcePersonInput!]!): Int!
+  upsertMetric(input: UpsertMetricInput!): Metric!
+  upsertSeries(input: UpsertSeriesInput!): Series!
+  ingestFact(input: IngestFactInput!): Boolean!
+  bulkIngestFacts(input: [IngestFactInput!]!): Boolean!
+  createUser(input: UserInput!): User
+  updateUser(id: ID, input: UserUpdateInput!): User
+  deleteUser(id: ID): User
+  createSla(input: SlaInput!): Sla!
+  updateSla(id: ID!, input: SlaUpdateInput!): Sla!
+  deleteSla(id: ID!): Sla!
+  root: String
+}
+
+input NameSearch {
+  query: String!
+  match: String
+}
+
+type Notification {
+  id: ID!
+  type: String!
+  message: String!
+  userId: String
+  readAt: String
+  isRead: Boolean!
+  attributes: JSON
+  createdAt: String
+  updatedAt: String
+}
+
+input NotificationFilter {
+  userId: String
+  readAt: String
+  isRead: Boolean
+  type: String
+}
+
+input NotificationInput {
+  type: String!
+  message: String!
+  userId: String
+  attributes: JSON
+}
+
+input NumberRange {
+  min: Int
+  max: Int
+}
+
+type OpenIssues {
+  CRITICAL: Int
+  HIGH: Int
+  MEDIUM: Int
+  LOW: Int
+  INFO: Int
+  UNKNOWN: Int
+}
+
+input OrderBy {
+  field: String
+  direction: String
+}
+
+type OrganizationMetrics {
+  organizationName: String!
+  totalDevelopers: Int!
+  activeDevelopers: Int!
+  totalCommits: Int!
+  totalPullRequests: Int!
+  totalPullRequestsAuthored: Int!
+  totalPullRequestsReviewed: Int!
+  totalPullRequestsMerged: Int!
+  totalCodeChanges: Int!
+  avgPrCommits: Float!
+  avgPrLines: Float!
+  avgCycleTimeHours: Float
+  avgPrsPerDeveloper: Float!
+  avgReviewsPerDeveloper: Float!
+  avgLinesPerDeveloper: Float!
+  totalActiveWeeks: Int!
+  totalReposContributed: Int!
+  highProductivityDevelopers: Int!
+  mediumProductivityDevelopers: Int!
+  lowProductivityDevelopers: Int!
+}
+
+input OrganizationMetricsFilter {
+  startDate: String
+  endDate: String
+  locationId: ID
+  includeInactive: Boolean
+}
+
+type OverallContributorsActivity {
+  totalCommits: Int!
+  avgCommitsPerContributor: Float!
+  pullRequests: Int!
+  avgPullRequestsPerContributor: Float!
+  linesChanged: Int!
+  avgLinesChangedPerContributor: Float!
+  totalContributors: Int!
+  activeContributors: Int!
+}
+
+input OverallContributorsActivityFilter {
+  startDate: String
+  endDate: String
+  managerId: ID
+}
+
+type PageInfo {
+  currentPage: Int
+  perPage: Int
+  itemCount: Int
+  pageCount: Int
+  hasPreviousPage: Boolean
+  hasNextPage: Boolean
+}
+
+type PaginatedApis {
+  items: [Api!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedApplications {
+  items: [Application]
+  pageInfo: PageInfo
+}
+
+type PaginatedApplicationSummary {
+  items: [JourneyApplicationSummary]
+  pageInfo: PageInfo
+}
+
+type PaginatedCheckSummary {
+  items: [JourneyCheckSummary]
+  pageInfo: PageInfo
+}
+
+type PaginatedCommits {
+  items: [Commit]
+  pageInfo: PageInfo
+}
+
+type PaginatedComplianceReports {
+  items: [ComplianceReport!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedDeploymentEnvs {
+  items: DeplopmentEnvs
+  pageInfo: PageInfo
+}
+
+type PaginatedDeveloperMetrics {
+  items: [DeveloperMetrics]
+  pageInfo: PageInfo
+}
+
+type PaginatedEntities {
+  items: [Entity]
+  pageInfo: PageInfo
+}
+
+type PaginatedEvents {
+  items: [Event]
+  pageInfo: PageInfo
+}
+
+type PaginatedFlatDevMetrics {
+  items: [FlatDevMetrics]
+  pageInfo: PageInfo
+}
+
+type PaginatedIncidents {
+  items: [Incident!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedInsights {
+  items: [Insight]
+  pageInfo: PageInfo
+}
+
+type PaginatedIntegrationLog {
+  items: [IntegrationLog]
+  pageInfo: PageInfo
+}
+
+type PaginatedJourneyRuns {
+  items: [JourneyRun]
+  pageInfo: PageInfo
+}
+
+type PaginatedManagerMetrics {
+  items: [ManagerMetrics]
+  pageInfo: PageInfo
+}
+
+type PaginatedMappings {
+  items: [Mapping!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedNotifications {
+  items: [Notification]
+  pageInfo: PageInfo
+}
+
+type PaginatedPolicies {
+  items: [Policy!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedPortfolioApps {
+  items: [PortfolioAppsGroup!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedPortfolioClosure {
+  items: [PortfolioClosureGroup!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedRepo {
+  items: [Repo]
+  pageInfo: PageInfo
+}
+
+type PaginatedResources {
+  items: [Resource!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedRules {
+  items: [Rule!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedTeamActivityDevelopers {
+  items: [TeamActivityDeveloper!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedTeamMetrics {
+  items: [TeamMetrics]
+  pageInfo: PageInfo
+}
+
+type PaginatedTechVersionMetrics {
+  items: [TechVersionMetric!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedVulnerabilities {
+  items: [Vulnerability!]!
+  pageInfo: PageInfo!
+}
+
+type PaginatedVulnerabilityIdentifiers {
+  items: [VulnerabilityIdentifier!]!
+  pageInfo: PageInfo!
+}
+
+input Pagination {
+  limit: Int
+  offset: Int
+}
+
+type Permission {
+  id: ID!
+  name: String!
+  group: String!
+  slug: String!
+  description: String
+  createdAt: String!
+  updatedAt: String
+}
+
+input PermissionInput {
+  name: String!
+  group: String!
+  description: String
+}
+
+type Person implements EntityInterface {
+  id: ID!
+  type: String!
+  name: String!
+  shortId: String!
+  accountId: String!
+  description: String
+  attributes: [EntityAttribute!]!
+  relationships(types: [String]): [Relationship!]!
+  blueprint: Blueprint
+  rollup(queries: [RollupQuery]!): [Rollup]
+  commitsByDate: [CommitByDate]
+  commitPercentage(lookbackDays: Int): [CommitPercentage]
+  mappings: [Mapping]
+  createdAt: String
+  updatedAt: String
+}
+
+type PersonActivityTimeline {
+  days: [ActivityTimelineDay!]!
+  total: Int!
+}
+
+input PersonActivityTimelineFilter {
+  personId: ID!
+  startDate: String
+  endDate: String
+  types: [String!]
+}
+
+type PersonCommitCount {
+  person: Entity
+  committer: Committer!
+  commitCount: Int!
+}
+
+input PersonInput {
+  name: String!
+}
+
+type Policy {
+  id: ID!
+  name: String!
+  description: String
+  rules: [Rule]
+  complianceReports: [ComplianceReport]
+  createdAt: String
+  updatedAt: String
+}
+
+input PolicyFilter {
+  name: String
+}
+
+input PolicyInput {
+  name: String!
+  description: String
+}
+
+input PolicyUpdateInput {
+  name: String
+  description: String
+}
+
+input PortfolioAppsFilter {
+  portfolioId: [ID!]
+}
+
+type PortfolioAppsGroup {
+  portfolioId: ID!
+  appIds: [ID!]!
+  appCount: Int!
+}
+
+input PortfolioClosureFilter {
+  ancestorId: [ID!]
+}
+
+type PortfolioClosureGroup {
+  ancestorId: ID!
+  descendants: [DescendantInfo!]!
+  descendantCount: Int!
+}
+
+type PortfolioInventorySummary {
+  portfolio: Entity
+  applicationCount: Int
+}
+
+type PossibleValue {
+  value: StringNumberBool
+  label: String
+}
+
+input PossibleValueInput {
+  value: StringNumberBool
+  label: String!
+}
+
+enum Provider {
+  AWS
+  AZURE
+  GCP
+  OPENSHIFT
+  VMWARE
+}
+
+type PullRequest {
+  id: ID!
+  repo: Repo!
+  account: Account!
+  system: SystemType!
+  systemId: String!
+  systemUrl: String
+  title: String!
+  description: String
+  state: PullRequestState!
+  isDraft: Boolean!
+  sourceBranch: String!
+  sourceCommitSha: String
+  targetBranch: String!
+  targetCommitSha: String
+  mergeCommitSha: String
+  mergeStrategy: MergeStrategy
+  mergeStatus: MergeStatus
+  mergeMessage: String
+  isMergeable: Boolean
+  hasConflicts: Boolean!
+  createdDate: String!
+  updatedDate: String
+  mergedDate: String
+  closedDate: String
+  author: Entity
+  authorName: String
+  authorEmail: String
+  mergedBy: Entity
+  reviewDecision: ReviewDecision
+  reviewers: [PullRequestReviewer!]!
+  additions: Int!
+  deletions: Int!
+  changedFiles: Int!
+  commentsCount: Int!
+  commitsCount: Int!
+  reviewCommentsCount: Int!
+  commits: [Commit!]!
+  comments: [PullRequestComment!]!
+  labels: [PullRequestLabel!]!
+  statusChecks: [PullRequestStatusCheck!]!
+  files: [PullRequestFile!]!
+  workItems: [PullRequestWorkItem!]!
+  raw: JSON
+  createdAt: String!
+  updatedAt: String!
+}
+
+type PullRequestComment {
+  id: ID!
+  pullRequest: PullRequest!
+  systemCommentId: String!
+  commentType: CommentType
+  body: String
+  filePath: String
+  lineNumber: Int
+  startLine: Int
+  endLine: Int
+  position: Int
+  author: Entity
+  authorSystemId: String
+  authorUsername: String
+  authorDisplayName: String
+  commentCreatedAt: String
+  commentUpdatedAt: String
+  parentComment: PullRequestComment
+  childComments: [PullRequestComment!]!
+}
+
+type PullRequestCommentConnection {
+  items: [PullRequestComment!]!
+  pageInfo: PageInfo!
+}
+
+type PullRequestCommit {
+  id: ID!
+  pullRequest: PullRequest!
+  commit: Commit!
+  account: Account!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type PullRequestConnection {
+  items: [PullRequest!]!
+  pageInfo: PageInfo!
+}
+
+type PullRequestFile {
+  id: ID!
+  pullRequest: PullRequest!
+  filePath: String!
+  previousPath: String
+  changeType: FileChangeType
+  additions: Int!
+  deletions: Int!
+  changes: Int!
+  patch: String
+}
+
+input PullRequestFilter {
+  repoId: ID
+  repoIds: [ID!]
+  system: SystemType
+  state: PullRequestState
+  states: [PullRequestState!]
+  authorCommitterId: ID
+  reviewerCommitterId: ID
+  sourceBranch: String
+  targetBranch: String
+  createdAfter: String
+  createdBefore: String
+  mergedAfter: String
+  mergedBefore: String
+  searchTerm: String
+}
+
+type PullRequestLabel {
+  id: ID!
+  pullRequest: PullRequest!
+  labelId: String
+  labelName: String!
+  labelColor: String
+  labelDescription: String
+}
+
+type PullRequestReviewer {
+  id: ID!
+  pullRequest: PullRequest!
+  reviewer: Entity
+  reviewerSystemId: String
+  reviewerUsername: String
+  reviewerEmail: String
+  reviewerDisplayName: String
+  reviewerType: ReviewerType
+  vote: Int
+  reviewState: ReviewState
+  isRequired: Boolean!
+  hasDeclined: Boolean!
+  assignedAt: String
+  reviewedAt: String
+}
+
+type PullRequestReviewerConnection {
+  items: [PullRequestReviewer!]!
+  pageInfo: PageInfo!
+}
+
+input PullRequestSort {
+  field: PullRequestSortField!
+  direction: SortDirection!
+}
+
+enum PullRequestSortField {
+  CREATED_DATE
+  UPDATED_DATE
+  MERGED_DATE
+  TITLE
+  STATE
+  ADDITIONS
+  DELETIONS
+  COMMENTS_COUNT
+}
+
+enum PullRequestState {
+  OPEN
+  CLOSED
+  MERGED
+  DRAFT
+  ABANDONED
+  DECLINED
+  SUPERSEDED
+}
+
+type PullRequestStatusCheck {
+  id: ID!
+  pullRequest: PullRequest!
+  systemCheckId: String
+  context: String!
+  state: CheckState!
+  description: String
+  targetUrl: String
+  checkCreatedAt: String
+  checkUpdatedAt: String
+}
+
+type PullRequestWorkItem {
+  id: ID!
+  pullRequest: PullRequest!
+  entity: Entity
+  workItemSystemId: String!
+  workItemKey: String
+  workItemTitle: String
+  workItemType: String
+  workItemUrl: String
+}
+
+type Query {
+  account(id: ID!): Account
+  currentAccount: Account
+  allAccounts: [Account]
+  api(id: ID!): Api
+  apis(filter: ApiFilter, pagination: Pagination, orderBy: OrderBy): PaginatedApis!
+  allAPIKeys: [APIKey]
+  blueprint(id: ID!): Blueprint
+  allBlueprints(filter: BlueprintFilter, pagination: Pagination, orderBy: OrderBy): [Blueprint]
+  journeyCheck(id: ID!): JourneyCheck
+  journeyChecks(filter: JourneyCheckFilter, pagination: Pagination, orderBy: OrderBy): [JourneyCheck]
+  _journeyChecksMeta(filter: JourneyCheckFilter, pagination: Pagination): PageInfo
+  commit(id: ID!): Commit
+  allCommits(filter: CommitFilter, pagination: Pagination): [Commit]
+  commits(filter: CommitFilter, pagination: Pagination, orderBy: OrderBy): PaginatedCommits
+  complianceReport(id: ID!): ComplianceReport
+  complianceReports(filter: ComplianceReportFilter, pagination: Pagination, orderBy: OrderBy): PaginatedComplianceReports!
+  file(id: ID!): File
+  allFiles(type: FileType): [File]
+  resource(id: ID!): Resource
+  resources(filter: ResourceFilter, pagination: Pagination, orderBy: OrderBy): PaginatedResources!
+  entity(id: ID!): Entity
+  allEntities(filter: EntityFilter, pagination: Pagination, orderBy: OrderBy): [Entity]
+  entityCount(filter: EntityFilter): EntityCount
+  inventorySummary: InventorySummary
+  myApplications: [Entity]!
+  entityAttributeUniqueValues(type: String!, maxValuesPerField: Int, excludeHighCardinality: Boolean, includeFields: [String], excludeFields: [String]): [AttributeUniqueValues]
+  mapping(id: ID!): Mapping
+  mappings(filter: MappingFilter, pagination: Pagination, orderBy: OrderBy): PaginatedMappings!
+  application(id: ID!): Application
+  allApplications(filter: ApplicationFilter, pagination: Pagination, orderBy: OrderBy): PaginatedApplications
+  technologyVersionMetrics(orderBy: OrderBy, pagination: Pagination, export: ExportFormat, filter: TechVersionFilter): PaginatedTechVersionMetrics!
+  event(id: ID!): Event
+  allEvents(filter: EventFilter, pagination: Pagination, orderBy: OrderBy): PaginatedEvents
+  deploymentsByEnv(filter: DeploymentFilter, pagination: Pagination, orderBy: OrderBy): PaginatedEvents
+  deploymentsByEntity(filter: DeploymentFilter, pagination: Pagination, orderBy: OrderBy): PaginatedEvents
+  deploymentEnvs(filter: DeploymentFilter, pagination: Pagination, orderBy: OrderBy): DeplopmentEnvs
+  currentFlags: [FeatureFlagEntry!]!
+  incident(id: ID!): Incident
+  incidents(filter: IncidentFilter, pagination: Pagination, orderBy: OrderBy): PaginatedIncidents!
+  incidentCount(filter: IncidentFilter): IncidentCount!
+  incidentSummary(filter: IncidentSummaryFilter): IncidentSummary!
+  insights(filter: InsightFilter, pagination: Pagination, orderBy: OrderBy): PaginatedInsights
+  integration(id: ID!): Integration
+  allIntegrations(filter: IntegrationFilter): [Integration]
+  allIntegrationLogs(filter: IntegrationLogFilter, pagination: Pagination): [IntegrationLog]
+  integrationLogs(filter: IntegrationLogFilter, pagination: Pagination, orderBy: OrderBy): PaginatedIntegrationLog
+  journey(id: ID!): Journey
+  journeys(filter: JourneyFilter, pagination: Pagination, orderBy: OrderBy): [Journey]
+  _journeysMeta(filter: JourneyFilter, pagination: Pagination): PageInfo
+  combinedCounts: CombinedCounts
+  topJourneys: [TopJourney]
+  journeyApplications(filter: JourneyApplicationsFilter, pagination: Pagination, orderBy: OrderBy): PaginatedApplications
+  journeyPortfolioSummary(id: ID!): [JourneyPortfolioSummary]
+  journeyApplicationSummary(filter: JourneyApplicationSummaryFilter!, pagination: Pagination, orderBy: OrderBy): PaginatedApplicationSummary
+  journeyCheckSummary(filter: JourneyCheckSummaryFilter!, pagination: Pagination, orderBy: OrderBy): PaginatedCheckSummary
+  journeyRun(id: ID!): JourneyRun
+  journeyRuns(filter: JourneyRunFilter, pagination: Pagination, orderBy: OrderBy): [JourneyRun]
+  _journeyRunsMeta(filter: JourneyRunFilter, pagination: Pagination): PageInfo
+  notification(id: ID!): Notification
+  allNotifications(filter: NotificationFilter, pagination: Pagination, orderBy: OrderBy): PaginatedNotifications
+  allPermissions: [Permission!]!
+  permission(id: ID!): Permission
+  person(id: ID!): Person
+  allPeople: [Person]
+  policy(id: ID!): Policy
+  policies(filter: PolicyFilter, pagination: Pagination, orderBy: OrderBy): PaginatedPolicies!
+  relationship(id: ID!): Relationship
+  allRelationships(type: String, pagination: Pagination, orderBy: OrderBy): [Relationship]
+  repo(id: ID!): Repo
+  allRepos(filter: RepoFilter, pagination: Pagination, orderBy: OrderBy): [Repo]
+  repos(filter: RepoFilter, pagination: Pagination, orderBy: OrderBy): PaginatedRepo
+  allRoles: [Role!]!
+  role(id: ID!): Role
+  journeyRule(id: ID!): JourneyRule
+  journeyRules(filter: JourneyRuleFilter, pagination: Pagination, orderBy: OrderBy): [JourneyRule]
+  _journeyRulesMeta(filter: JourneyRuleFilter, pagination: Pagination): PageInfo
+  rule(id: ID!): Rule
+  rules(filter: RuleFilter, pagination: Pagination, orderBy: OrderBy): PaginatedRules!
+  journeyRuleResult(id: ID!): JourneyRuleResult
+  journeyRuleResults(filter: JourneyRuleResultFilter, pagination: Pagination, orderBy: OrderBy): [JourneyRuleResult]
+  _journeyRuleResultsMeta(filter: JourneyRuleResultFilter, pagination: Pagination): PageInfo
+  allSecrets: [Secret!]!
+  secret(id: ID!): Secret
+  pullRequest(id: ID!): PullRequest
+  pullRequestBySystemId(system: SystemType!, systemId: String!): PullRequest
+  pullRequests(filter: PullRequestFilter, sort: PullRequestSort, first: Int, after: String, last: Int, before: String): PullRequestConnection!
+  pullRequestComments(pullRequestId: ID!, first: Int, after: String): PullRequestCommentConnection!
+  pullRequestReviewers(pullRequestId: ID!, first: Int, after: String): PullRequestReviewerConnection!
+  pullRequestCommits(pullRequestId: ID!, first: Int, after: String): CommitConnection!
+  searchPullRequests(query: String!, limit: Int, after: String): PullRequestConnection!
+  developerMetrics(filter: DeveloperMetricsFilter, pagination: Pagination, orderBy: OrderBy): PaginatedDeveloperMetrics!
+  developerMetricsDownloadUrl(filter: DeveloperMetricsFilter, pagination: Pagination, orderBy: OrderBy): String!
+  singleTeamMetrics(filter: TeamMetricsFilter): TeamMetrics!
+  teamMetrics(filter: TeamMetricsFilter, pagination: Pagination, orderBy: OrderBy): PaginatedTeamMetrics!
+  teamMetricsDownloadUrl(filter: TeamMetricsFilter, pagination: Pagination, orderBy: OrderBy): String!
+  managerMetrics(filter: ManagerMetricsFilter, pagination: Pagination, orderBy: OrderBy): PaginatedManagerMetrics!
+  managerMetricsDownloadUrl(filter: ManagerMetricsFilter, pagination: Pagination, orderBy: OrderBy): String!
+  organizationMetrics: OrganizationMetrics
+  organizationMetricsDownloadUrl: String!
+  overallContributorsActivity(filter: OverallContributorsActivityFilter): OverallContributorsActivity!
+  topContributors(filter: TopContributorsFilter!): [TopContributor!]!
+  flatDevMetrics(filter: FlatDevMetricsFilter, pagination: Pagination, orderBy: OrderBy): PaginatedFlatDevMetrics!
+  teamActivityDevelopers(filter: TeamActivityFilter!, pagination: Pagination, orderBy: OrderBy): PaginatedTeamActivityDevelopers!
+  flatDevMetricsDownloadUrl(filter: FlatDevMetricsFilter): String!
+  personActivityTimeline(filter: PersonActivityTimelineFilter!, pagination: Pagination): PersonActivityTimeline!
+  detectDuplicatePeople: DuplicateDetectionResult
+  metric(id: ID!): Metric
+  metrics(limit: Int = 50, offset: Int = 0): MetricConnection!
+  latestValue(metricId: ID!, subjectType: MetricsSubjectType!, subjectId: ID!): CurrentValue
+  metricsDaily(metricId: ID!, subjectType: MetricsSubjectType!, subjectId: ID!, from: Date!, to: Date!, limit: Int, offset: Int): MetricDailyConnection!
+  portfolioApps(filter: PortfolioAppsFilter, pagination: Pagination, orderBy: OrderBy): PaginatedPortfolioApps!
+  portfolioClosure(filter: PortfolioClosureFilter, pagination: Pagination, orderBy: OrderBy): PaginatedPortfolioClosure!
+  user(id: ID!): User
+  currentUser: User
+  userByIdentityId(identityId: ID!): User
+  allUsers(filter: UserFilter, pagination: Pagination, orderBy: OrderBy): [User]
+  vulnerability(id: ID!): Vulnerability
+  vulnerabilities(filter: VulnerabilityFilter, pagination: Pagination, orderBy: OrderBy): PaginatedVulnerabilities!
+  nestedVulnerabilities(filter: VulnerabilityFilter, pagination: Pagination, orderBy: OrderBy): PaginatedVulnerabilities!
+  vulnerabilitySummary(filter: VulnerabilitySummaryFilter): VulnerabilitySummary!
+  nestedVulnerabilitySummary(filter: VulnerabilitySummaryFilter): VulnerabilitySummary!
+  vulnerabilityIdentifier(id: ID!): VulnerabilityIdentifier!
+  vulnerabilityIdentifiers(filter: VulnerabilityIdentifierFilter, pagination: Pagination): PaginatedVulnerabilityIdentifiers!
+  vulnerabilityDownloadUrl(filter: VulnerabilityFilter): String!
+  sla(id: ID!): Sla
+  slas(filter: SlaFilter): [Sla!]!
+  root: String
+  search(query: String!, limit: Int, type: [String!]): SearchResults
+}
+
+input RelatedToFilter {
+  id: ID!
+  relationshipType: String!
+  direction: String!
+}
+
+type Relationship {
+  id: ID!
+  type: String!
+  toId: ID!
+  to: Entity!
+  fromId: ID!
+  from: Entity!
+  attributes: [RelationshipAttribute!]!
+}
+
+type RelationshipAttribute {
+  field: String
+  value: JSON
+}
+
+input RelationshipFilter {
+  type: String!
+  direction: String!
+  value: ID!
+}
+
+input RelationshipInput {
+  type: String!
+  toId: ID!
+  fromId: ID!
+  attributes: JSONObject
+}
+
+type Repo {
+  id: ID!
+  name: String!
+  description: String
+  url: String
+  ignore: Boolean
+  readyForIntegration: Boolean
+  externalSystem: String
+  components: [Entity!]
+  topContributors(limit: Int = 10): [PersonCommitCount!]
+  createdAt: String!
+  updatedAt: String!
+}
+
+input RepoFilter {
+  id: [ID!]
+  name: NameSearch
+  importStatus: String
+  externalSystem: String
+  ignored: Boolean
+  componentId: ID
+  hasComponents: Boolean
+}
+
+input RepoInput {
+  name: String!
+  description: String
+  url: String
+  ignore: Boolean
+  readyForIntegration: Boolean
+  componentIds: [ID!]
+}
+
+type Resource {
+  id: ID!
+  providerAssignedId: String!
+  name: String
+  displayName: String
+  resourceType: ResourceType!
+  provider: Provider!
+  service: Service
+  accountId: String!
+  region: String
+  zone: String
+  status: ResourceStatus
+  tags: JSON
+  creationTimestamp: String
+  lastModifiedTimestamp: String
+  discoveredTimestamp: String!
+  lastSeenTimestamp: String!
+  parentResourceId: ID
+  componentId: ID!
+  additionalUniversalAttributes: JSON
+  providerSpecificDetails: JSON
+  parent: Resource
+  children: [Resource!]!
+  component: Component!
+  vulnerabilities: [Vulnerability!]!
+}
+
+input ResourceFilter {
+  resourceType: ResourceType
+  provider: Provider
+  service: Service
+  region: String
+  status: ResourceStatus
+  parentResourceId: ID
+}
+
+enum ResourceStatus {
+  ACTIVE
+  INACTIVE
+  CREATING
+  DELETING
+  UPDATING
+  ERROR
+  DELETED
+  TERMINATING
+}
+
+enum ResourceType {
+  VIRTUAL_MACHINE
+  OBJECT_STORAGE_BUCKET
+  BLOCK_STORAGE_VOLUME
+  FILE_STORAGE_SHARE
+  VIRTUAL_PRIVATE_CLOUD
+  SUBNET
+  LOAD_BALANCER
+  FIREWALL_RULE
+  RELATIONAL_DATABASE
+  KUBERNETES_CLUSTER
+  KUBERNETES_POD
+  RESOURCE_GROUP
+  PROJECT
+  DATACENTER
+}
+
+enum ReviewDecision {
+  APPROVED
+  CHANGES_REQUESTED
+  REVIEW_REQUIRED
+  COMMENTED
+}
+
+enum ReviewerType {
+  USER
+  TEAM
+  GROUP
+}
+
+enum ReviewState {
+  APPROVED
+  REJECTED
+  PENDING
+  COMMENTED
+  DISMISSED
+  CHANGES_REQUESTED
+}
+
+type Role {
+  id: ID!
+  name: String!
+  description: String
+  permissions: [Permission]
+  createdAt: String!
+  updatedAt: String
+}
+
+input RoleInput {
+  name: String!
+  description: String
+  permissions: [String]!
+}
+
+type Rollup {
+  key: String!
+  entities: [RollupEntity]!
+}
+
+type RollupEntity {
+  entity: Entity!
+  count: Int!
+}
+
+input RollupQuery {
+  key: String!
+  path: [String]!
+}
+
+type Rule {
+  id: ID!
+  policyId: ID!
+  policy: Policy
+  type: String!
+  criteria: JSON!
+  dataSource: String!
+  description: String
+  createdAt: String
+  updatedAt: String
+}
+
+input RuleFilter {
+  policyId: ID
+  type: String
+  dataSource: String
+}
+
+input RuleInput {
+  policyId: ID!
+  type: String!
+  criteria: JSON!
+  dataSource: String!
+  description: String
+}
+
+input RuleUpdateInput {
+  type: String
+  criteria: JSON
+  dataSource: String
+  description: String
+}
+
+type SearchResults {
+  entities: [Entity]
+  relationships: [Relationship]
+  blueprints: [Blueprint]
+}
+
+type Secret {
+  id: ID!
+  name: String!
+  integrationId: ID!
+  value: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+input SecretInput {
+  name: String!
+  integrationId: ID
+  value: String!
+}
+
+type Series {
+  id: ID!
+  metricId: ID!
+  metric: Metric!
+  subjectType: MetricsSubjectType!
+  subjectId: ID!
+  subject: MetricsSubject
+  createdAt: Date!
+}
+
+enum Service {
+  AWS_LAMBDA
+  EC2_INSTANCE
+  S3_BUCKET
+  RDS_INSTANCE
+  AZURE_FUNCTION
+  AZURE_VM
+  AZURE_BLOB_STORAGE
+  AZURE_SQL_DATABASE
+  GCP_CLOUD_FUNCTION
+  GCP_COMPUTE_ENGINE
+  GCP_CLOUD_STORAGE_BUCKET
+  GCP_CLOUD_SQL_INSTANCE
+  AWS_VPC
+  AWS_SUBNET
+  AWS_LOAD_BALANCER
+  AWS_EBS_VOLUME
+  AWS_EKS_CLUSTER
+  AZURE_VNET
+  AZURE_SUBNET
+  AZURE_LOAD_BALANCER
+  AZURE_MANAGED_DISK
+  AZURE_AKS_CLUSTER
+  AZURE_RESOURCE_GROUP
+  GCP_VPC_NETWORK
+  GCP_SUBNETWORK
+  GCP_LOAD_BALANCER
+  GCP_PERSISTENT_DISK
+  GCP_GKE_CLUSTER
+  GCP_PROJECT
+}
+
+type Sla {
+  id: ID!
+  accountId: String!
+  type: String!
+  classification: String!
+  days: Int!
+  atRiskDays: Int!
+  createdAt: String!
+  updatedAt: String!
+  deletedAt: String
+}
+
+enum SLA_STATUS {
+  GREEN
+  YELLOW
+  RED
+}
+
+input SlaFilter {
+  type: String
+}
+
+input SlaInput {
+  type: String!
+  classification: String!
+  days: Int!
+  atRiskDays: Int
+}
+
+type SLAStatus {
+  deadline: String
+  daysRemaining: Int
+  status: SLA_STATUS
+}
+
+input SlaUpdateInput {
+  type: String
+  classification: String
+  days: Int
+  atRiskDays: Int
+}
+
+enum SortDirection {
+  ASC
+  DESC
+}
+
+input SourcePersonInput {
+  name: String!
+  email: String
+  corporateId: String
+}
+
+"""String, Number or Boolean custom scalar type"""
+scalar StringNumberBool
+
+"""A scalar that can be a string or an array of strings"""
+scalar StringOrStringArray
+
+enum SystemType {
+  AZURE_DEVOPS
+  GITHUB
+  BITBUCKET
+}
+
+type TeamActivityDeveloper {
+  developer: Entity!
+  commits: Int!
+  commitsPerPr: Float!
+  prs: Int!
+  linesAdded: Int!
+  linesRemoved: Int!
+  linesChanged: Int!
+  reviewsGiven: Int!
+  activeDays: Int!
+  weeklyActiveDays: Float!
+  lastActive: String!
+}
+
+input TeamActivityFilter {
+  teamId: ID!
+  startDate: String
+  endDate: String
+  includeSubTeams: Boolean
+}
+
+type TeamMetrics {
+  teamId: ID!
+  teamName: String!
+  totalMembers: Int!
+  membersWithCommitter: Int!
+  membersWithCommits: Int!
+  membersWithPRs: Int!
+  membersWithComments: Int!
+  activeDevCount: Int!
+  commitCount: Int!
+  totalAdditions: Int!
+  totalDeletions: Int!
+  prCount: Int!
+  prMergedCount: Int!
+  prAuthoredApprovedCount: Int!
+  prCommentsCount: Int!
+  prsCommentedCount: Int!
+  avgCodingDays: Float!
+  avgPrApprovalDays: Float!
+  avgCommitsPerPr: Float!
+  mergeRate: Float!
+  participationRate: Float!
+}
+
+input TeamMetricsFilter {
+  startDate: String
+  endDate: String
+  teamId: ID
+  teamName: String
+  includeSubTeams: Boolean
+}
+
+input TechVersionFilter {
+  mappedComponentsOnly: Boolean = true
+}
+
+type TechVersionMetric {
+  versionId: ID!
+  technologyId: ID!
+  versionLabel: String!
+  componentCount: Int!
+  eolDate: String!
+  daysUntilEol: Int!
+}
+
+type TierSummary {
+  tier: String
+  count: Int
+}
+
+type TopContributor {
+  personId: ID!
+  personName: String!
+  personEmail: String
+  commitCount: Int!
+}
+
+input TopContributorsFilter {
+  teamId: ID!
+  limit: Int
+  startDate: String
+  endDate: String
+  includeSubTeams: Boolean
+}
+
+type TopJourney {
+  name: String!
+  score: Int!
+  applicationCount: Int!
+}
+
+input UpdateAccountInput {
+  name: String
+  defaultUserRoleId: String
+}
+
+input UpdateJourneyCheckInput {
+  id: ID!
+  name: String
+  description: String
+  key: String
+  configRules: JSON
+  multiple: Boolean
+}
+
+input UpdateJourneyInput {
+  name: String
+  allApplications: Boolean
+  applicationIds: [String]
+  description: String
+}
+
+input UpdateJourneyRuleInput {
+  configuration: JSON
+  scoring: JSON
+  journeyCheckId: String
+  journeyId: String
+}
+
+input UpdateResourceInput {
+  name: String
+  displayName: String
+  region: String
+  zone: String
+  status: ResourceStatus
+  tags: JSON
+  lastModifiedTimestamp: String
+  lastSeenTimestamp: String
+  parentResourceId: ID
+  componentId: ID
+  additionalUniversalAttributes: JSON
+  providerSpecificDetails: JSON
+  service: Service
+}
+
+input UpsertMetricInput {
+  id: ID
+  key: String!
+  name: String!
+  unit: String!
+}
+
+input UpsertSeriesInput {
+  metricId: ID!
+  subjectType: MetricsSubjectType!
+  subjectId: ID!
+}
+
+type User {
+  id: ID!
+  firstName: String
+  lastName: String
+  email: String
+  phone: String
+  status: Boolean
+  personId: ID
+  person: Person
+  accountId: String
+  roles: [Role!]!
+  permissions: [Permission!]!
+}
+
+input UserFilter {
+  id: [ID!]
+  firstName: NameSearch
+  lastName: NameSearch
+  email: NameSearch
+}
+
+input UserInput {
+  firstName: String
+  lastName: String
+  email: String
+  phone: String
+  identityId: String
+  personId: ID
+  roles: [ID]
+  accountId: String
+}
+
+input UserUpdateInput {
+  firstName: String
+  lastName: String
+  phone: String
+  status: Boolean
+  personId: ID
+  roles: [ID!]
+}
+
+type Vulnerability {
+  id: ID!
+  name: String!
+  description: String
+  originatingSystem: String
+  originatingSystemId: String
+  originatingSystemUrl: String
+  identifiers: [VulnerabilityIdentifier]
+  scanType: String
+  severity: String
+  status: String
+  location: JSON
+  attributes: JSON
+  openDate: String
+  closeDate: String
+  vulnerableId: String
+  vulnerableType: String
+  vulnerableItem: VulnerableItem
+  slaStatus: SLAStatus
+}
+
+type VulnerabilityCount {
+  status: String!
+  severity: String!
+  count: Int!
+}
+
+input VulnerabilityFilter {
+  name: String
+  vulnerableId: String
+  severity: String
+  status: String
+  applicationId: String
+  portfolioId: String
+  componentId: String
+  startingEntityId: String
+  vulnerabilityIdentifierId: String
+  originatingSystem: String
+}
+
+type VulnerabilityIdentifier {
+  id: ID!
+  externalSource: String!
+  externalId: String!
+  externalUrl: String
+  externalName: String
+  externalDescription: String
+  publishedDate: String
+  epssScore: Float
+  cvssScore: Float
+  impactScore: Float
+  exploitabilityScore: Float
+  attackVector: String
+  vectorString: String
+  attackComplexity: String
+  references: JSON
+  metrics: JSON
+  weaknesses: JSON
+  vulnerabilities: [Vulnerability!] @deprecated(reason: "Use paginatedVulnerabilities instead")
+}
+
+input VulnerabilityIdentifierFilter {
+  externalId: String
+  externalSource: String
+  externalUrl: String
+  externalName: String
+  publishedDate: String
+}
+
+type VulnerabilitySummary {
+  openIssues: OpenIssues
+  counts: [VulnerabilityCount]
+}
+
+input VulnerabilitySummaryFilter {
+  entityIds: [String!]
+  repoIds: [String!]
+  applicationId: String
+  portfolioId: String
+  startingEntityId: String
+}
+
+union VulnerableItem = Entity | Repo
+
