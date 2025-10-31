@@ -12,6 +12,8 @@ describe('EntityResolver', () => {
   let mockGraphQLClient: IGraphQLClient;
   let mockGitService: IGitService;
 
+  const mockWorkspacePath = '/test/workspace';
+
   beforeEach(() => {
     mockLogger = {
       trace: vi.fn(),
@@ -423,7 +425,7 @@ describe('EntityResolver', () => {
           data: { entity: mockEntity },
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('123e4567-e89b-12d3-a456-426614174000');
@@ -446,13 +448,14 @@ describe('EntityResolver', () => {
           data: { allRepos: [mockRepo] },
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('123e4567-e89b-12d3-a456-426614174000');
       });
 
       it('should load repository by slug', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const gitUrl = 'https://github.com/org/repo-001';
         const mockRepo = {
           id: 'repo-123',
@@ -464,20 +467,21 @@ describe('EntityResolver', () => {
           externalSystem: 'github',
         };
 
-        // repositorySlug triggers URL lookup via getGitRemoteUrl
+        // Empty context triggers URL lookup via getGitRemoteUrl
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(gitUrl);
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
           data: { allRepos: [mockRepo] },
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-123');
       });
 
       it('should load repository by URL when slug not found', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const gitUrl = 'git@github.com:org/repo';
         const mockRepo = {
           id: 'repo-123',
@@ -491,15 +495,13 @@ describe('EntityResolver', () => {
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(gitUrl);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } }) // slug lookup fails
-          .mockResolvedValueOnce({ data: { allRepos: [mockRepo] } }); // URL lookup succeeds
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [mockRepo] } }); // URL lookup succeeds
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-123');
-        expect(mockGraphQLClient.query).toHaveBeenCalledTimes(2);
+        expect(mockGraphQLClient.query).toHaveBeenCalledTimes(1);
       });
 
       it('should load repository from component relationship', async () => {
@@ -536,7 +538,7 @@ describe('EntityResolver', () => {
           .mockResolvedValueOnce({ data: { entity: null } })
           .mockResolvedValueOnce({ data: { entity: mockEntity } });
 
-        const result = await entityResolver.loadRepositoryDetails(context, componentDetails);
+        const result = await entityResolver.loadRepositoryDetails(context, componentDetails, mockWorkspacePath);
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-456');
@@ -544,6 +546,7 @@ describe('EntityResolver', () => {
       });
 
       it('should prefer repositoryId over repositorySlug when both are provided', async () => {
+        const context = { repositoryId: 'uuid-123' }; // repositoryId should take precedence
         const mockEntity = {
           id: 'uuid-123',
           shortId: 'repo-001',
@@ -557,13 +560,14 @@ describe('EntityResolver', () => {
           data: { entity: mockEntity },
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeDefined();
         expect(mockGraphQLClient.query).toHaveBeenCalledTimes(1);
       });
 
       it('should handle HTTPS URL for repository lookup', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const gitUrl = 'https://github.com/org/repo';
         const mockRepo = {
           id: 'repo-123',
@@ -576,17 +580,16 @@ describe('EntityResolver', () => {
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(gitUrl);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } })
-          .mockResolvedValueOnce({ data: { allRepos: [mockRepo] } });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [mockRepo] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-123');
       });
 
       it('should handle SSH URL conversion for repository lookup', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const gitUrl = 'git@github.com:org/repo';
         const mockRepo = {
           id: 'repo-123',
@@ -599,11 +602,9 @@ describe('EntityResolver', () => {
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(gitUrl);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } })
-          .mockResolvedValueOnce({ data: { allRepos: [mockRepo] } });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [mockRepo] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-123');
@@ -618,23 +619,25 @@ describe('EntityResolver', () => {
           data: { entity: null },
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeUndefined();
       });
 
       it('should return undefined when repository not found by slug', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
 
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
           data: { allEntities: [] },
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeUndefined();
       });
 
       it('should return undefined when repository not found by URL', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const gitUrl = 'https://github.com/org/non-existent';
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
@@ -643,7 +646,7 @@ describe('EntityResolver', () => {
           .mockResolvedValueOnce({ data: { allEntities: [] } })
           .mockResolvedValueOnce({ data: { allRepos: [] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeUndefined();
       });
@@ -651,7 +654,7 @@ describe('EntityResolver', () => {
       it('should return undefined when both repositoryId and repositorySlug are missing', async () => {
         const context = {};
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeUndefined();
         expect(mockGraphQLClient.query).not.toHaveBeenCalled();
@@ -667,41 +670,38 @@ describe('EntityResolver', () => {
       });
 
       it('should handle Git remote URL fetch failure', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(undefined);
-        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
-          data: { allEntities: [] },
-        });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeUndefined();
       });
 
       it('should handle null repository result from URL lookup', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const gitUrl = 'https://github.com/org/repo';
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(gitUrl);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } })
-          .mockResolvedValueOnce({ data: { allRepos: [null] } });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [null] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeUndefined();
       });
 
       it('should handle empty repository array from URL lookup', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const gitUrl = 'https://github.com/org/repo';
 
+        vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(gitUrl);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } })
-          .mockResolvedValueOnce({ data: { allRepos: [] } });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeUndefined();
       });
@@ -713,37 +713,38 @@ describe('EntityResolver', () => {
           data: null,
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeUndefined();
       });
 
       it('should handle invalid URL format', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const invalidUrl = 'not-a-valid-url';
 
+        vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(invalidUrl);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } })
-          .mockResolvedValueOnce({ data: { allRepos: [] } });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         // Should not throw, but return undefined
         expect(result).toBeUndefined();
       });
 
       it('should handle empty URL string', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
 
+        vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce('');
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeUndefined();
       });
 
       it('should handle repository query returning multiple repos (edge case)', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const gitUrl = 'https://github.com/org/repo';
         const mockRepos = [
           {
@@ -760,11 +761,9 @@ describe('EntityResolver', () => {
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(gitUrl);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } })
-          .mockResolvedValueOnce({ data: { allRepos: mockRepos } });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: mockRepos } });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         // Should return first result
         expect(result).toBeDefined();
@@ -785,7 +784,7 @@ describe('EntityResolver', () => {
           data: { entity: mockEntity },
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-123');
@@ -815,7 +814,7 @@ describe('EntityResolver', () => {
           .mockResolvedValueOnce({ data: { entity: null } })
           .mockResolvedValueOnce({ data: { entity: null } }); // Repository not found
 
-        const result = await entityResolver.loadRepositoryDetails(context, componentDetails);
+        const result = await entityResolver.loadRepositoryDetails(context, componentDetails, mockWorkspacePath);
 
         expect(result).toBeUndefined();
       });
@@ -1138,6 +1137,7 @@ describe('EntityResolver', () => {
   describe('fetchRepositoryByUrl', () => {
     describe('positive scenarios', () => {
       it('should fetch repository by HTTPS URL', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const url = 'https://github.com/org/repo';
         const mockRepo = {
           id: 'repo-123',
@@ -1152,11 +1152,9 @@ describe('EntityResolver', () => {
         // Use reflection or make method public for testing - for now, test via loadRepositoryDetails
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(url);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } }) // slug lookup fails
-          .mockResolvedValueOnce({ data: { allRepos: [mockRepo] } }); // URL lookup succeeds
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [mockRepo] } }); // URL lookup succeeds
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-123');
@@ -1164,6 +1162,7 @@ describe('EntityResolver', () => {
       });
 
       it('should fetch repository by SSH URL (converted to HTTPS)', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const sshUrl = 'git@github.com:org/repo';
         const mockRepo = {
           id: 'repo-123',
@@ -1176,11 +1175,9 @@ describe('EntityResolver', () => {
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(sshUrl);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } })
-          .mockResolvedValueOnce({ data: { allRepos: [mockRepo] } });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [mockRepo] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-123');
@@ -1189,115 +1186,110 @@ describe('EntityResolver', () => {
 
     describe('negative scenarios', () => {
       it('should return undefined when repository not found (empty array)', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const url = 'https://github.com/org/non-existent';
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(url);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } })
-          .mockResolvedValueOnce({ data: { allRepos: [] } });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeUndefined();
       });
 
       it('should return undefined when repository not found (null response)', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const url = 'https://github.com/org/repo';
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(url);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } })
-          .mockResolvedValueOnce({ data: { allRepos: [null] } });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [null] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeUndefined();
       });
 
       it('should handle invalid URL format', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const invalidUrl = 'not-a-valid-url';
 
+        vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(invalidUrl);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } })
-          .mockResolvedValueOnce({ data: { allRepos: [] } });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeUndefined();
       });
 
       it('should handle empty URL string', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
 
+        vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce('');
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeUndefined();
       });
 
       it('should handle null URL', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(undefined);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeUndefined();
       });
 
       it('should handle GraphQL query error', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const url = 'https://github.com/org/repo';
         const error = new Error('Network error');
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(url);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } })
-          .mockRejectedValueOnce(error);
+        vi.mocked(mockGraphQLClient.query).mockRejectedValueOnce(error);
 
-        await expect(entityResolver.loadRepositoryDetails(context)).rejects.toThrow(ApiError);
+        await expect(entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath)).rejects.toThrow(ApiError);
       });
 
       it('should handle GraphQL error response', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const url = 'https://github.com/org/repo';
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(url);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } })
-          .mockResolvedValueOnce({
-            data: null,
-            errors: [{ message: 'GraphQL error' }],
-          });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
+          data: null,
+          errors: [{ message: 'GraphQL error' }],
+        });
 
         // GraphQL errors don't throw, but return data: null
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeUndefined();
       });
 
       it('should handle malformed GraphQL response', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const url = 'https://github.com/org/repo';
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(url);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } })
-          .mockResolvedValueOnce({ data: null });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: null });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeUndefined();
       });
 
       it('should handle missing required fields in repository response', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const url = 'https://github.com/org/repo';
         const mockRepo = {
           id: 'repo-123',
@@ -1306,17 +1298,16 @@ describe('EntityResolver', () => {
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(url);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } })
-          .mockResolvedValueOnce({ data: { allRepos: [mockRepo] } });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [mockRepo] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-123');
       });
 
       it('should handle repository query returning multiple repos (limit: 1 should prevent)', async () => {
+        const context = {}; // Empty context triggers Git URL lookup
         const url = 'https://github.com/org/repo';
         const mockRepos = [
           {
@@ -1333,11 +1324,9 @@ describe('EntityResolver', () => {
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(url);
-        vi.mocked(mockGraphQLClient.query)
-          .mockResolvedValueOnce({ data: { allEntities: [] } })
-          .mockResolvedValueOnce({ data: { allRepos: mockRepos } });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: mockRepos } });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         // Should return first result
         expect(result).toBeDefined();
@@ -1348,25 +1337,26 @@ describe('EntityResolver', () => {
 
   describe('fetchEntityByShortIdDirect', () => {
     describe('positive scenarios', () => {
-      it('should fetch component by shortId', async () => {
-        const context = { componentSlug: 'comp-001' };
-        const mockEntities = [{
-          id: 'comp-123',
-          shortId: 'comp-001',
-          name: 'Test Component',
-          type: 'component',
-          attributes: [],
-          relationships: [],
-        }];
+      it('should fetch repository entity by shortId', async () => {
+        const context = { repositoryId: 'repo001' }; // Using short ID format (no hyphens)
+        const mockRepo = {
+          id: 'uuid-123',
+          name: 'repo001',
+          description: 'Test Repo',
+          url: 'https://github.com/org/repo001',
+          ignore: false,
+          readyForIntegration: true,
+          externalSystem: 'github',
+        };
 
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
-          data: { allEntities: mockEntities },
+          data: { allRepos: [mockRepo] },
         });
 
-        const result = await entityResolver.loadComponentDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeDefined();
-        expect(result?.entity.shortId).toBe('comp-001');
+        expect(result?.entity.id).toBe('uuid-123');
       });
 
       it('should fetch application by shortId', async () => {
@@ -1391,25 +1381,25 @@ describe('EntityResolver', () => {
       });
 
       it('should fetch repository entity by shortId', async () => {
-        const mockEntities = [{
-          id: 'repo-123',
-          shortId: 'repo-001',
-          name: 'Test Repo',
-          type: 'repo',
-          attributes: [],
-          relationships: [],
-        }];
+        const context = { repositoryId: 'repo001' }; // Short ID format (no hyphens)
+        const mockRepo = {
+          id: 'uuid-456',
+          name: 'repo001',
+          description: 'Test Repo 2',
+          url: 'https://github.com/org/repo001',
+          ignore: false,
+          readyForIntegration: true,
+          externalSystem: 'github',
+        };
 
-        // Mock getRepositoryRoot to return undefined so URL lookup is skipped
-        vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce(undefined);
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
-          data: { allEntities: mockEntities },
+          data: { allRepos: [mockRepo] },
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context);
+        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
 
         expect(result).toBeDefined();
-        expect(result?.entity.shortId).toBe('repo-001');
+        expect(result?.entity.id).toBe('uuid-456');
       });
 
       it('should handle entity with attributes', async () => {

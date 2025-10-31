@@ -155,7 +155,6 @@ describe('ConfigService', () => {
 
       const result = configService.normalizeIdentifiers(config);
 
-      expect(result.repositorySlug).toBe('user/repo');
       expect(result.componentSlug).toBe('my-component');
     });
 
@@ -168,7 +167,6 @@ describe('ConfigService', () => {
 
       const result = configService.normalizeIdentifiers(config);
 
-      expect(result.repositorySlug).toBe('user/repo');
       expect(result.componentSlug).toBe('my-component');
       expect(result.componentId).toBe('comp-123');
       expect(result.applicationSlug).toBe('my-app');
@@ -177,13 +175,16 @@ describe('ConfigService', () => {
 
     it('should prioritize identifiers section over root-level', () => {
       const config = {
+        repositoryId: 'root-repo-id',
         identifiers: {
+          repositoryId: 'priority-repo-id',
         },
       } as any;
 
       const result = configService.normalizeIdentifiers(config);
 
-      expect(result.repositorySlug).toBe('priority/repo');
+      // repositorySlug has been removed - verify identifiers section takes priority
+      expect(result.repositoryId).toBe('priority-repo-id');
     });
 
     it('should handle project.appId as string', () => {

@@ -1,5 +1,4 @@
 import { promises as fs } from 'fs';
-import * as path from 'path';
 
 import yaml from 'js-yaml';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -12,16 +11,32 @@ import {
   hasValidYamlConfig,
 } from '../../utils/yamlValidator';
 
-// Mock modules
+// Mock vscode module
+vi.mock('vscode', () => ({
+  workspace: {
+    workspaceFolders: [] as any[],
+  },
+  window: {
+    showWarningMessage: vi.fn(),
+    showInformationMessage: vi.fn(),
+    showErrorMessage: vi.fn(),
+  },
+  WorkspaceFolder: class {} as any,
+}));
 vi.mock('fs');
-vi.mock('vscode');
 vi.mock('js-yaml');
 vi.mock('../../gitUtils', () => ({
   getRepositoryRoot: vi.fn(),
 }));
 
+interface MockWorkspaceFolder {
+  uri: { fsPath: string };
+  name: string;
+  index: number;
+}
+
 describe('yamlValidator', () => {
-  let mockWorkspaceFolder: vscode.WorkspaceFolder;
+  let mockWorkspaceFolder: MockWorkspaceFolder;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -232,8 +247,6 @@ describe('yamlValidator', () => {
         },
       }));
 
-      const { getRepositoryRoot } = await import('../../gitUtils');
-      (getRepositoryRoot as any) = vi.fn(() => Promise.resolve('/workspace/project'));
 
       const result = await validateWorkspaceYaml();
 
@@ -269,8 +282,6 @@ describe('yamlValidator', () => {
         },
       }));
 
-      const { getRepositoryRoot } = await import('../../gitUtils');
-      (getRepositoryRoot as any) = vi.fn(() => Promise.resolve('/workspace/project'));
 
       const result = await hasValidYamlConfig();
 
@@ -280,8 +291,6 @@ describe('yamlValidator', () => {
     it('should return false when no YAML file exists', async () => {
       (fs.access as any) = vi.fn(() => Promise.reject(new Error('File not found')));
 
-      const { getRepositoryRoot } = await import('../../gitUtils');
-      (getRepositoryRoot as any) = vi.fn(() => Promise.resolve('/workspace/project'));
 
       const result = await hasValidYamlConfig();
 

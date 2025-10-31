@@ -10,7 +10,10 @@ export interface IDevGridClient {
    * @param workspacePath - Optional workspace path for Git operations
    * @returns Promise resolving to the insight bundle
    */
-  fetchInsights(identifiers: DevGridIdentifiers, workspacePath?: string): Promise<DevGridInsightBundle>;
+  fetchInsights(
+    identifiers: DevGridIdentifiers,
+    workspacePath?: string
+  ): Promise<DevGridInsightBundle>;
 
   /**
    * Gets the current status text for display in the status bar

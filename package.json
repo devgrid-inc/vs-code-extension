@@ -246,8 +246,7 @@
     "release:alpha": "standard-version --prerelease alpha",
     "release:beta": "standard-version --prerelease beta",
     "release:rc": "standard-version --prerelease rc",
-    "release:dry": "standard-version --dry-run",
-    "prepare": "husky"
+    "release:dry": "standard-version --dry-run"
   },
   "config": {
     "commitizen": {
@@ -269,7 +268,6 @@
     "esbuild": "^0.25.11",
     "eslint": "^8.57.0",
     "eslint-plugin-import": "^2.32.0",
-    "husky": "^9.1.7",
     "prettier": "^3.6.2",
     "standard-version": "^9.5.0",
     "typescript": "^5.4.5",

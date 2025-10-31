@@ -35,6 +35,7 @@ describe('DevGridClientService', () => {
       toEntitySummary: vi.fn(),
       toRepositorySummary: vi.fn(),
       toApplicationSummary: vi.fn(),
+      checkRepoComponentLinkage: vi.fn(),
     } as unknown as EntityResolver;
 
     mockVulnerabilityService = {
@@ -50,7 +51,7 @@ describe('DevGridClientService', () => {
     } as unknown as DependencyService;
 
     mockEndpoints = {
-      dashboardUrl: 'https://dashboard.devgrid.io/{repositorySlug}',
+      dashboardUrl: 'https://dashboard.devgrid.io/',
     };
 
     clientService = new DevGridClientService(
@@ -94,6 +95,7 @@ describe('DevGridClientService', () => {
       (mockEntityResolver.loadComponentDetails as any).mockResolvedValue(mockComponentDetails);
       (mockEntityResolver.loadRepositoryDetails as any).mockResolvedValue(mockRepositoryDetails);
       (mockEntityResolver.loadApplicationDetails as any).mockResolvedValue(mockApplicationDetails);
+      (mockEntityResolver.checkRepoComponentLinkage as any).mockResolvedValue({ linked: true });
 
       (mockEntityResolver.toEntitySummary as any).mockReturnValue({
         id: 'comp-456',
@@ -169,7 +171,10 @@ describe('DevGridClientService', () => {
         attributes: new Map(),
         relationships: [],
       });
-      (mockEntityResolver.toEntitySummary as any).mockReturnValue({ id: 'comp-123', name: 'Component' });
+      (mockEntityResolver.toEntitySummary as any).mockReturnValue({
+        id: 'comp-123',
+        name: 'Component',
+      });
       (mockEntityResolver.loadRepositoryDetails as any).mockResolvedValue(undefined);
       (mockEntityResolver.loadApplicationDetails as any).mockResolvedValue(undefined);
       (mockVulnerabilityService.fetchVulnerabilities as any).mockResolvedValue([
@@ -180,7 +185,10 @@ describe('DevGridClientService', () => {
 
       const result = await clientService.fetchInsights(identifiers);
 
-      expect(mockVulnerabilityService.fetchVulnerabilities).toHaveBeenCalledWith('comp-123', undefined);
+      expect(mockVulnerabilityService.fetchVulnerabilities).toHaveBeenCalledWith(
+        'comp-123',
+        undefined
+      );
       expect(result.vulnerabilities).toHaveLength(1);
     });
 
@@ -280,13 +288,13 @@ describe('DevGridClientService', () => {
       const error = new Error('Failed to fetch data');
       (mockEntityResolver.loadComponentDetails as any).mockRejectedValue(error);
 
-      await expect(clientService.fetchInsights(identifiers)).rejects.toThrow('Failed to fetch data');
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        'Failed to fetch insights',
-        error,
-        { identifiers }
+      await expect(clientService.fetchInsights(identifiers)).rejects.toThrow(
+        'Failed to fetch data'
       );
+
+      expect(mockLogger.error).toHaveBeenCalledWith('Failed to fetch insights', error, {
+        identifiers,
+      });
 
       const statusText = clientService.getStatusText();
       expect(statusText).toContain('Error');
@@ -337,12 +345,11 @@ describe('DevGridClientService', () => {
     });
 
     it('should render dashboard URL from template', () => {
-      const context = {
-      };
+      const context = {};
 
       const url = clientService.renderDashboardUrl(context);
 
-      expect(url).toBe('https://dashboard.devgrid.io/user/repo');
+      expect(url).toBe('https://dashboard.devgrid.io/');
     });
 
     it('should return undefined when dashboard URL template is not configured', () => {
@@ -355,7 +362,7 @@ describe('DevGridClientService', () => {
         {}
       );
 
-
+      const result = emptyEndpointsService.renderDashboardUrl({});
       expect(result).toBeUndefined();
     });
   });
@@ -367,7 +374,9 @@ describe('DevGridClientService', () => {
 
       (mockEntityResolver.loadComponentDetails as any).mockRejectedValue(error);
 
-      await expect(clientService.fetchInsights(identifiers)).rejects.toThrow('Entity resolver error');
+      await expect(clientService.fetchInsights(identifiers)).rejects.toThrow(
+        'Entity resolver error'
+      );
     });
 
     it('should propagate errors from vulnerability service', async () => {
@@ -384,8 +393,9 @@ describe('DevGridClientService', () => {
       (mockEntityResolver.loadApplicationDetails as any).mockResolvedValue(undefined);
       (mockVulnerabilityService.fetchVulnerabilities as any).mockRejectedValue(error);
 
-      await expect(clientService.fetchInsights(identifiers)).rejects.toThrow('Vulnerability service error');
+      await expect(clientService.fetchInsights(identifiers)).rejects.toThrow(
+        'Vulnerability service error'
+      );
     });
   });
 });
-

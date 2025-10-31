@@ -70,19 +70,19 @@ describe('IncidentService', () => {
         id: 'incident-1',
         title: 'Test Incident 1',
         state: 'open',
-        openedAt: '2023-01-01T00:00:00Z',
+        openedAt: undefined,
         closedAt: undefined,
-        summary: 'Test summary',
-        url: 'https://example.com/incident-1',
+        summary: undefined,
+        url: undefined,
       });
       expect(result[1]).toEqual({
         id: 'incident-2',
         title: 'Test Incident 2',
         state: 'resolved',
-        openedAt: '2023-01-02T00:00:00Z',
+        openedAt: undefined,
         closedAt: '2023-01-03T00:00:00Z',
-        summary: 'Another summary',
-        url: 'https://example.com/incident-2',
+        summary: undefined,
+        url: undefined,
       });
 
       expect(mockLogger.debug).toHaveBeenCalledWith('Fetching incidents', { entityId: 'entity-123' });

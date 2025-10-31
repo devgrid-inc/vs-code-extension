@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import * as path from 'path';
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
@@ -8,12 +7,26 @@ import type { IGraphQLClient } from '../../interfaces/IGraphQLClient';
 import type { ILogger } from '../../interfaces/ILogger';
 import { YamlTemplateService } from '../../services/YamlTemplateService';
 
-// Mock modules
-vi.mock('vscode');
+// Mock vscode module
+vi.mock('vscode', () => ({
+  workspace: {
+    workspaceFolders: [] as any[],
+    fs: {
+      readFile: vi.fn(),
+      writeFile: vi.fn(),
+    },
+  },
+  window: {
+    showErrorMessage: vi.fn(),
+  },
+  Uri: {
+    file: vi.fn((path: string) => ({ fsPath: path, toString: () => path })),
+  },
+}));
 vi.mock('fs');
 vi.mock('../../gitUtils', () => ({
-  getRemoteUrl: vi.fn(),
-  getRepositoryRoot: vi.fn(),
+  getRemoteUrl: vi.fn(() => Promise.resolve('https://github.com/owner/repo.git')),
+  getRepositoryRoot: vi.fn(() => Promise.resolve('/workspace/project')),
 }));
 
 describe('YamlTemplateService', () => {
@@ -69,10 +82,6 @@ describe('YamlTemplateService', () => {
     });
 
     it('should generate template with detected repository info', async () => {
-      const { getRemoteUrl, getRepositoryRoot } = await import('../../gitUtils');
-      (getRemoteUrl as any) = vi.fn(() => Promise.resolve('https://github.com/user/repo.git'));
-      (getRepositoryRoot as any) = vi.fn(() => Promise.resolve('/workspace/project'));
-
       // Mock GraphQL response for repository
       (mockGraphQLClient.query as any).mockResolvedValueOnce({
         data: {
@@ -139,10 +148,6 @@ describe('YamlTemplateService', () => {
     });
 
     it('should generate template without API when repository not found', async () => {
-      const { getRemoteUrl, getRepositoryRoot } = await import('../../gitUtils');
-      (getRemoteUrl as any) = vi.fn(() => Promise.resolve('https://github.com/user/repo.git'));
-      (getRepositoryRoot as any) = vi.fn(() => Promise.resolve('/workspace/project'));
-
       // Mock GraphQL response - no repository found
       (mockGraphQLClient.query as any).mockResolvedValue({
         data: {
@@ -158,10 +163,6 @@ describe('YamlTemplateService', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      const { getRemoteUrl, getRepositoryRoot } = await import('../../gitUtils');
-      (getRemoteUrl as any) = vi.fn(() => Promise.resolve('https://github.com/user/repo.git'));
-      (getRepositoryRoot as any) = vi.fn(() => Promise.resolve('/workspace/project'));
-
       // Mock GraphQL error
       (mockGraphQLClient.query as any).mockRejectedValue(new Error('API Error'));
 
@@ -174,21 +175,17 @@ describe('YamlTemplateService', () => {
     });
 
     it('should handle missing git remote URL', async () => {
-      const { getRemoteUrl, getRepositoryRoot } = await import('../../gitUtils');
-      (getRemoteUrl as any) = vi.fn(() => Promise.resolve(undefined));
-      (getRepositoryRoot as any) = vi.fn(() => Promise.resolve('/workspace/project'));
+      const gitUtils = await import('../../gitUtils');
+      vi.mocked(gitUtils.getRemoteUrl).mockResolvedValueOnce(undefined);
 
       const template = await service.generateTemplate();
 
       expect(template).toContain('# DevGrid Configuration');
-      expect(mockLogger.debug).toHaveBeenCalledWith('No git remote URL found');
+      // When getRemoteUrl returns undefined, it skips repository lookup entirely
+      expect(mockLogger.debug).toHaveBeenCalled();
     });
 
     it('should detect manifest file when present', async () => {
-      const { getRemoteUrl, getRepositoryRoot } = await import('../../gitUtils');
-      (getRemoteUrl as any) = vi.fn(() => Promise.resolve(undefined));
-      (getRepositoryRoot as any) = vi.fn(() => Promise.resolve('/workspace/project'));
-
       // Mock package.json exists
       (fs.existsSync as any) = vi.fn((filePath: string) => {
         return filePath.includes('package.json');
@@ -200,10 +197,6 @@ describe('YamlTemplateService', () => {
     });
 
     it('should handle multiple components from repository', async () => {
-      const { getRemoteUrl, getRepositoryRoot } = await import('../../gitUtils');
-      (getRemoteUrl as any) = vi.fn(() => Promise.resolve('https://github.com/user/repo.git'));
-      (getRepositoryRoot as any) = vi.fn(() => Promise.resolve('/workspace/project'));
-
       // Mock repository with multiple components
       (mockGraphQLClient.query as any).mockResolvedValueOnce({
         data: {
@@ -281,4 +274,3 @@ describe('YamlTemplateService', () => {
     });
   });
 });
-

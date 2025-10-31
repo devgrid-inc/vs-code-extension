@@ -88,7 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🛠️ Developer Experience
 - **Interactive Commits**: Commitizen for standardized commit messages
-- **Commit Validation**: Automatic commit message linting with husky hooks
+- **Commit Validation**: Commitlint configuration for conventional commits
 - **Automated Versioning**: standard-version for semantic versioning and changelog
 - **Keyboard Shortcuts**: `Ctrl+Shift+R Ctrl+Shift+D` (Mac: `Cmd+Shift+R Cmd+Shift+D`) for refresh
 

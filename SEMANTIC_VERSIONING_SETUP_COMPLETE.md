@@ -15,8 +15,7 @@ Successfully implemented a professional semantic versioning workflow using Conve
     "commitizen": "^4.3.1",           // Interactive commit builder
     "cz-conventional-changelog": "^3.3.0", // Commitizen adapter
     "@commitlint/cli": "^19.6.0",     // Commit message linter
-    "@commitlint/config-conventional": "^19.6.0", // Commitlint config
-    "husky": "^9.1.7"                 // Git hooks
+    "@commitlint/config-conventional": "^19.6.0" // Commitlint config
   }
 }
 ```
@@ -38,11 +37,6 @@ Successfully implemented a professional semantic versioning workflow using Conve
 - Commitizen configuration
 - Interactive commit type definitions
 - User-friendly descriptions
-
-#### `.husky/commit-msg`
-- Git hook for commit message validation
-- Automatically validates on every commit
-- Prevents non-conventional commits
 
 ### 3. NPM Scripts Added
 
@@ -367,4 +361,3 @@ For questions about semantic versioning:
 ---
 
 **Ready to use! 🎉**
-

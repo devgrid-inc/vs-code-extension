@@ -238,13 +238,6 @@ npm run release -- --first-release
 - **[standard-version](https://github.com/conventional-changelog/standard-version)**: Automated versioning and changelog
 - **[commitizen](https://github.com/commitizen/cz-cli)**: Interactive commit message builder
 - **[commitlint](https://github.com/conventional-changelog/commitlint)**: Commit message linter
-- **[husky](https://github.com/typicode/husky)**: Git hooks
-
-### Git Hooks
-
-- **commit-msg**: Validates commit message format
-- **pre-commit**: (Optional) Runs linter before commit
-
 ### Configuration Files
 
 - `.versionrc.json`: standard-version configuration
@@ -325,4 +318,3 @@ npm run release:patch
 - Open an issue: https://github.com/devgrid-inc/vs-code-extension/issues
 - Check CONTRIBUTING.md
 - Review existing releases for examples
-

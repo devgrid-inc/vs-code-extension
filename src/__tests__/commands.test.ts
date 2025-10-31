@@ -3,6 +3,34 @@ import * as vscode from 'vscode';
 
 import type { AuthService } from '../authService';
 import { registerAuthCommands } from '../commands/authCommands';
+import * as yamlValidator from '../utils/yamlValidator';
+
+// Mock yamlValidator
+vi.mock('../utils/yamlValidator', () => ({
+  hasValidYamlConfig: vi.fn(),
+}));
+
+// Create command registry for testing
+const commandRegistry = new Map<string, (...args: any[]) => any>();
+
+// Mock vscode.commands.registerCommand to store handlers
+vi.spyOn(vscode.commands, 'registerCommand').mockImplementation(
+  (command: string, handler: (...args: any[]) => any) => {
+    commandRegistry.set(command, handler);
+    return { dispose: vi.fn() };
+  }
+);
+
+// Mock vscode.commands.executeCommand to call stored handlers
+vi.spyOn(vscode.commands, 'executeCommand').mockImplementation(
+  (command: string, ...args: any[]) => {
+    const handler = commandRegistry.get(command);
+    if (!handler) {
+      return Promise.reject(new Error('Command not found'));
+    }
+    return Promise.resolve(handler(...args));
+  }
+);
 
 describe('Command Handlers', () => {
   describe('devgrid.openVulnerability Command', () => {
@@ -328,6 +356,24 @@ describe('Command Handlers', () => {
 
     beforeEach(() => {
       vi.clearAllMocks();
+      commandRegistry.clear(); // Clear command registry for clean test state
+
+      vi.mocked(vscode.commands.registerCommand).mockImplementation(
+        (command: string, handler: (...args: any[]) => any) => {
+          commandRegistry.set(command, handler);
+          return { dispose: vi.fn() };
+        }
+      );
+
+      vi.mocked(vscode.commands.executeCommand).mockImplementation(
+        (command: string, ...args: any[]) => {
+          const handler = commandRegistry.get(command);
+          if (!handler) {
+            return Promise.reject(new Error('Command not found'));
+          }
+          return Promise.resolve(handler(...args));
+        }
+      );
 
       mockAuthService = {
         signIn: vi.fn(),
@@ -365,8 +411,7 @@ describe('Command Handlers', () => {
       (mockAuthService.signIn as any).mockResolvedValue(mockSession);
       (vscode.window.showInformationMessage as any) = vi.fn(() => Promise.resolve(undefined));
 
-      const { hasValidYamlConfig } = await import('../utils/yamlValidator');
-      (hasValidYamlConfig as any) = vi.fn(() => Promise.resolve(false));
+      vi.mocked(yamlValidator.hasValidYamlConfig).mockResolvedValue(false);
 
       registerAuthCommands(mockContext, mockAuthService);
 
@@ -390,8 +435,7 @@ describe('Command Handlers', () => {
       (mockAuthService.signIn as any).mockResolvedValue(mockSession);
       (vscode.window.showInformationMessage as any) = vi.fn();
 
-      const { hasValidYamlConfig } = await import('../utils/yamlValidator');
-      (hasValidYamlConfig as any) = vi.fn(() => Promise.resolve(true));
+      vi.mocked(yamlValidator.hasValidYamlConfig).mockResolvedValue(true);
 
       registerAuthCommands(mockContext, mockAuthService);
 
@@ -418,8 +462,7 @@ describe('Command Handlers', () => {
         appendLine: vi.fn(),
       }));
 
-      const { hasValidYamlConfig } = await import('../utils/yamlValidator');
-      (hasValidYamlConfig as any) = vi.fn(() => Promise.reject(new Error('Check failed')));
+      vi.mocked(yamlValidator.hasValidYamlConfig).mockRejectedValue(new Error('Check failed'));
 
       registerAuthCommands(mockContext, mockAuthService);
 
