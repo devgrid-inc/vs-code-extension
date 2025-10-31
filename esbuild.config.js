@@ -1,5 +1,6 @@
 const esbuild = require('esbuild');
 const path = require('path');
+const fs = require('fs');
 
 // Determine if we're in production mode
 const isProduction = process.argv.includes('--production');
@@ -28,6 +29,17 @@ async function build() {
   try {
     console.log(`Building extension (${isProduction ? 'production' : 'development'})...`);
     const result = await esbuild.build(buildOptions);
+    
+    // Copy config.json to dist/ directory
+    // Note: esbuild bundles JSON imports inline, but we also want the file available
+    // for runtime requires if needed
+    const configSource = path.join(__dirname, 'src', 'config.json');
+    const configDest = path.join(__dirname, 'dist', 'config.json');
+    if (fs.existsSync(configSource)) {
+      fs.copyFileSync(configSource, configDest);
+      console.log('Copied config.json to dist/');
+    }
+    
     console.log('Build completed successfully!');
 
     if (result.warnings.length > 0) {

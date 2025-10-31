@@ -44,7 +44,12 @@
     "onCommand:devgrid.openDashboard",
     "onCommand:devgrid.signIn",
     "onCommand:devgrid.signOut",
-    "onCommand:devgrid.showAccount"
+    "onCommand:devgrid.showAccount",
+    "onCommand:devgrid.openSetupGuide",
+    "onCommand:devgrid.createYamlTemplate",
+    "onCommand:devgrid.clearCache",
+    "onCommand:devgrid.pauseAutoRefresh",
+    "onCommand:devgrid.resumeAutoRefresh"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -76,6 +81,34 @@
       {
         "command": "devgrid.openVulnerability",
         "title": "DevGrid: Open Vulnerability Details"
+      },
+      {
+        "command": "devgrid.openSetupGuide",
+        "title": "DevGrid: Open YAML Setup Guide"
+      },
+      {
+        "command": "devgrid.createYamlTemplate",
+        "title": "DevGrid: Create YAML Template"
+      },
+      {
+        "command": "devgrid.clearCache",
+        "title": "DevGrid: Clear Cache"
+      },
+      {
+        "command": "devgrid.pauseAutoRefresh",
+        "title": "DevGrid: Pause Auto-Refresh"
+      },
+      {
+        "command": "devgrid.resumeAutoRefresh",
+        "title": "DevGrid: Resume Auto-Refresh"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "devgrid.refresh",
+        "key": "ctrl+shift+r ctrl+shift+d",
+        "mac": "cmd+shift+r cmd+shift+d",
+        "when": "editorTextFocus"
       }
     ],
     "views": {
@@ -112,10 +145,10 @@
         },
         "devgrid.maxItemsPerSection": {
           "type": "number",
-          "default": 5,
+          "default": 100,
           "minimum": 1,
-          "maximum": 50,
-          "markdownDescription": "Maximum number of vulnerabilities, incidents, and dependencies to display in the DevGrid tree view."
+          "maximum": 500,
+          "markdownDescription": "Maximum number of vulnerabilities, incidents, and dependencies to display in the DevGrid tree view. Higher values may impact performance."
         },
         "devgrid.autoRefresh.enabled": {
           "type": "boolean",
@@ -131,12 +164,50 @@
         },
         "devgrid.logging.level": {
           "type": "string",
-          "enum": ["trace", "debug", "info", "warn", "error"],
+          "enum": [
+            "trace",
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ],
           "default": "info",
           "markdownDescription": "Minimum log level to display in the DevGrid output channel. Set to `debug` to see full GraphQL queries and responses."
         }
       }
-    }
+    },
+    "walkthroughs": [
+      {
+        "id": "devgrid.quickStart",
+        "title": "Get Started with DevGrid",
+        "description": "Learn how to use DevGrid to monitor vulnerabilities, incidents, and dependencies in your workspace.",
+        "steps": [
+          {
+            "id": "devgrid.signIn",
+            "title": "Sign In to DevGrid",
+            "description": "Connect your DevGrid account to start viewing insights.\n\nClick the button below to sign in with your DevGrid credentials.\n\n[Sign In](command:devgrid.signIn)",
+            "completionToast": {
+              "title": "Great! You've signed in to DevGrid.",
+              "message": "You can now view your insights."
+            }
+          },
+          {
+            "id": "devgrid.viewInsights",
+            "title": "View Your Insights",
+            "description": "Open the DevGrid Insights view in the Explorer sidebar to see your vulnerabilities, incidents, and dependencies.\n\n1. Look for **DevGrid Insights** in the Explorer panel (left sidebar)\n2. If you don't see it, click the Explorer icon or press `Cmd+Shift+E` (Mac) / `Ctrl+Shift+E` (Windows/Linux)\n3. The view will show your security insights once you're signed in and have data\n\nYou can also use the command palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and search for \"DevGrid: Refresh Insights\" to update your data.",
+            "media": {
+              "path": "media/icon.png",
+              "altText": "DevGrid Insights view"
+            }
+          },
+          {
+            "id": "devgrid.refresh",
+            "title": "Refresh Your Data",
+            "description": "Refresh your DevGrid insights to get the latest data.\n\nThe extension automatically refreshes every 5 minutes, but you can manually refresh at any time.\n\n[Refresh Insights Now](command:devgrid.refresh)\n\n**Tip:** You can configure the auto-refresh interval in VS Code settings (search for \"DevGrid\")."
+          }
+        ]
+      }
+    ]
   },
   "authentication": [
     {
@@ -158,7 +229,9 @@
     "lint:fix": "eslint src --ext ts --fix",
     "format": "prettier --write \"src/**/*.{ts,js,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
-    "package": "vsce package",
+    "check": "npm run lint && npm run test:run && npm run format:check",
+    "validate": "node scripts/validate-package.js",
+    "package": "npm run validate && vsce package",
     "publish": "vsce publish"
   },
   "devDependencies": {

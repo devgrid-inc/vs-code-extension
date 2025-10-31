@@ -6,7 +6,9 @@ import { AuthService } from './authService';
 import { registerAuthCommands } from './commands/authCommands';
 import { DevGridTreeDataProvider } from './devgridTreeDataProvider';
 import type { ILogger } from './interfaces/ILogger';
+import { DiagnosticsService } from './services/DiagnosticsService';
 import { ServiceContainer } from './services/ServiceContainer';
+import { VirtualDocumentProvider } from './services/VirtualDocumentProvider';
 import type { VulnerabilityService } from './services/VulnerabilityService';
 import { buildRemediationPrompt } from './utils/promptUtils';
 import { validateApiUrl, isValidVulnerabilityId } from './utils/validation';
@@ -18,8 +20,10 @@ interface WebviewMessage {
 
 let statusBarItem: vscode.StatusBarItem | undefined;
 let serviceContainer: ServiceContainer | undefined;
+let diagnosticsService: DiagnosticsService | undefined;
 let autoRefreshTimer: NodeJS.Timeout | undefined;
 let autoRefreshInProgress = false;
+let autoRefreshPaused = false;
 
 /**
  * Handles copying vulnerability remediation instructions to clipboard
@@ -162,6 +166,36 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const authService = new AuthService(authProvider);
     const treeDataProvider = new DevGridTreeDataProvider(serviceContainer, authService);
 
+    // Initialize virtual document provider
+    try {
+      const virtualDocumentProvider = new VirtualDocumentProvider();
+      const providerRegistration = vscode.workspace.registerTextDocumentContentProvider(
+        'devgrid',
+        virtualDocumentProvider
+      );
+      context.subscriptions.push(providerRegistration);
+      outputChannel.appendLine('[DevGrid] Virtual document provider registered');
+    } catch (error) {
+      outputChannel.appendLine(
+        `[DevGrid] Failed to register virtual document provider: ${error instanceof Error ? error.message : String(error)}`
+      );
+      // Don't throw - virtual document provider is not critical for extension functionality
+    }
+
+    // Initialize diagnostics service
+    try {
+      const logger = serviceContainer.getLogger();
+      const vulnerabilityService = serviceContainer.getVulnerabilityService();
+      diagnosticsService = new DiagnosticsService(vulnerabilityService, logger);
+      context.subscriptions.push(diagnosticsService);
+      outputChannel.appendLine('[DevGrid] Diagnostics service initialized');
+    } catch (error) {
+      outputChannel.appendLine(
+        `[DevGrid] Failed to initialize diagnostics service: ${error instanceof Error ? error.message : String(error)}`
+      );
+      // Don't throw - diagnostics is not critical for extension functionality
+    }
+
     // Create tree view
     let treeView: vscode.TreeView<any>;
     try {
@@ -206,12 +240,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       context.subscriptions.push(
         treeView,
         outputChannel,
-        statusBarItem,
+        ...(statusBarItem ? [statusBarItem] : []),
         providerRegistration,
 
         // Config watcher
         createConfigWatcher(treeDataProvider, () => {
-          void updateStatus();
+          void updateDiagnostics(treeDataProvider).then(() => {
+            void updateStatus();
+          });
         }),
 
         // Configuration change listener
@@ -219,8 +255,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           if (event.affectsConfiguration('devgrid')) {
             void treeDataProvider
               .refresh()
-              .then(() => {
-                void updateStatus();
+              .then(async () => {
+                await updateDiagnostics(treeDataProvider);
+                await updateStatus();
               })
               .catch(error => {
                 outputChannel.appendLine(
@@ -253,8 +290,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           if (event.provider.id === DevGridAuthProvider.id) {
             void treeDataProvider
               .refresh()
-              .then(() => {
-                void updateStatus();
+              .then(async () => {
+                await updateDiagnostics(treeDataProvider);
+                await updateStatus();
               })
               .catch(error => {
                 outputChannel.appendLine(
@@ -274,6 +312,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
               statusBarItem.text = 'DevGrid: Refreshing…';
             }
             await treeDataProvider.refresh();
+            await updateDiagnostics(treeDataProvider);
             await updateStatus();
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
@@ -283,17 +322,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }),
 
         // Settings command
-        vscode.commands.registerCommand('devgrid.openSettings', () => {
-          void vscode.commands
-            .executeCommand(
+        vscode.commands.registerCommand('devgrid.openSettings', async () => {
+          try {
+            await vscode.commands.executeCommand(
               'workbench.action.openSettings',
               '@ext:devgrid.devgrid-vscode-extension devgrid'
-            )
-            .catch(error => {
-              outputChannel.appendLine(
-                `[DevGrid] Failed to open settings: ${error instanceof Error ? error.message : String(error)}`
-              );
-            });
+            );
+          } catch (error) {
+            outputChannel.appendLine(
+              `[DevGrid] Failed to open settings: ${error instanceof Error ? error.message : String(error)}`
+            );
+          }
         }),
 
         // Dashboard command
@@ -311,6 +350,155 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             const message = error instanceof Error ? error.message : String(error);
             outputChannel.appendLine(`[DevGrid] Failed to open dashboard: ${message}`);
             await vscode.window.showErrorMessage(`DevGrid: Failed to open dashboard: ${message}`);
+          }
+        }),
+
+        // YAML Setup Guide command
+        vscode.commands.registerCommand('devgrid.openSetupGuide', async () => {
+          try {
+            const { openSetupGuide } = await import('./commands/yamlCommands');
+            await openSetupGuide();
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            outputChannel.appendLine(`[DevGrid] Failed to open setup guide: ${message}`);
+            await vscode.window.showErrorMessage(`DevGrid: Failed to open setup guide: ${message}`);
+          }
+        }),
+
+        // Create YAML Template command
+        vscode.commands.registerCommand('devgrid.createYamlTemplate', async () => {
+          try {
+            if (!serviceContainer) {
+              throw new Error('Service container not initialized');
+            }
+
+            const accessToken = await authService.getAccessToken();
+            if (!accessToken) {
+              await vscode.window.showErrorMessage(
+                'DevGrid: Sign in with DevGrid to create a template with auto-filled values.'
+              );
+              // Still allow creation without API
+            }
+
+            const { createYamlTemplate } = await import('./commands/yamlCommands');
+            
+            // Get GraphQL client and logger if authenticated
+            let graphqlClient;
+            let logger;
+            if (accessToken && serviceContainer) {
+              const configuration = vscode.workspace.getConfiguration('devgrid');
+              const apiBaseUrl = configuration.get<string>('apiBaseUrl', 'https://prod.api.devgrid.io');
+              serviceContainer.setApiBaseUrl(validateApiUrl(apiBaseUrl));
+              serviceContainer.setAuthToken(accessToken);
+              
+              // Get services needed to create GraphQL client
+              logger = serviceContainer.getLogger();
+              const httpClient = serviceContainer.get('httpClient') as import('./interfaces/IHttpClient').IHttpClient | undefined;
+              if (httpClient && logger) {
+                const { GraphQLClient } = await import('./services/GraphQLClient');
+                graphqlClient = new GraphQLClient(httpClient, logger);
+                graphqlClient.setEndpoint(`${validateApiUrl(apiBaseUrl)}/graphql`);
+                graphqlClient.setAuthToken(accessToken);
+              }
+            }
+
+            await createYamlTemplate(graphqlClient, logger);
+            
+            // Refresh tree view after template creation
+            await treeDataProvider.refresh();
+            await updateDiagnostics(treeDataProvider);
+            await updateStatus();
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            outputChannel.appendLine(`[DevGrid] Failed to create YAML template: ${message}`);
+            await vscode.window.showErrorMessage(`DevGrid: Failed to create template: ${message}`);
+          }
+        }),
+
+        // Clear Cache command
+        vscode.commands.registerCommand('devgrid.clearCache', async () => {
+          try {
+            const logger = serviceContainer?.get('logger') as ILogger | undefined;
+            logger?.info('Clearing all caches');
+
+            // Get the client and clear caches from all services
+            const client = treeDataProvider.getClient();
+            if (client) {
+              // Clear vulnerability cache
+              const vulnService = (client as any).vulnerabilityService;
+              if (vulnService && typeof vulnService.clearCache === 'function') {
+                vulnService.clearCache();
+              }
+
+              // Clear incident cache
+              const {incidentService} = (client as any);
+              if (incidentService && typeof incidentService.clearCache === 'function') {
+                incidentService.clearCache();
+              }
+
+              // Clear dependency cache
+              const {dependencyService} = (client as any);
+              if (dependencyService && typeof dependencyService.clearCache === 'function') {
+                dependencyService.clearCache();
+              }
+            }
+
+            await vscode.window.showInformationMessage('DevGrid: Cache cleared successfully');
+            logger?.info('All caches cleared successfully');
+
+            // Optionally refresh the data
+            const refresh = await vscode.window.showInformationMessage(
+              'Would you like to refresh the data now?',
+              'Yes',
+              'No'
+            );
+            if (refresh === 'Yes') {
+              await vscode.commands.executeCommand('devgrid.refresh');
+            }
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            outputChannel.appendLine(`[DevGrid] Failed to clear cache: ${message}`);
+            await vscode.window.showErrorMessage(`DevGrid: Failed to clear cache: ${message}`);
+          }
+        }),
+
+        // Pause Auto-Refresh command
+        vscode.commands.registerCommand('devgrid.pauseAutoRefresh', async () => {
+          try {
+            autoRefreshPaused = true;
+            await vscode.window.showInformationMessage('DevGrid: Auto-refresh paused');
+            outputChannel.appendLine('[DevGrid] Auto-refresh paused by user');
+            await updateStatus();
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            outputChannel.appendLine(`[DevGrid] Failed to pause auto-refresh: ${message}`);
+            await vscode.window.showErrorMessage(`DevGrid: Failed to pause auto-refresh: ${message}`);
+          }
+        }),
+
+        // Resume Auto-Refresh command
+        vscode.commands.registerCommand('devgrid.resumeAutoRefresh', async () => {
+          try {
+            autoRefreshPaused = false;
+            await vscode.window.showInformationMessage('DevGrid: Auto-refresh resumed');
+            outputChannel.appendLine('[DevGrid] Auto-refresh resumed by user');
+            
+            // Restart auto-refresh
+            startAutoRefresh(treeDataProvider, updateStatus, authService, outputChannel);
+            
+            // Optionally refresh immediately
+            const refreshNow = await vscode.window.showInformationMessage(
+              'Would you like to refresh now?',
+              'Yes',
+              'No'
+            );
+            if (refreshNow === 'Yes') {
+              await vscode.commands.executeCommand('devgrid.refresh');
+            }
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            outputChannel.appendLine(`[DevGrid] Failed to resume auto-refresh: ${message}`);
+            await vscode.window.showErrorMessage(`DevGrid: Failed to resume auto-refresh: ${message}`);
           }
         }),
 
@@ -405,9 +593,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             const logger = serviceContainer.get('logger') as ILogger;
 
             // Message handler for webview actions
-            const handleWebviewMessage = async (message: WebviewMessage) => {
+            const handleWebviewMessage = async (message: unknown) => {
+              const msg = message as WebviewMessage;
               try {
-                switch (message.type) {
+                switch (msg.type) {
                   case 'copyInstructions':
                     await handleCopyInstructions(vulnId, vulnerabilityService, logger);
                     break;
@@ -421,12 +610,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
               }
             };
 
+            // Get linkage status from tree data provider
+            const linkageStatus = treeDataProvider.getLinkageStatus();
+            const repositoryUrl = treeDataProvider.getRepositoryUrl();
+
             VulnerabilityDetailsPanel.createOrShow(
               vulnId,
               vulnerabilityService,
               logger,
               // eslint-disable-next-line @typescript-eslint/no-misused-promises
-              handleWebviewMessage
+              handleWebviewMessage,
+              linkageStatus,
+              repositoryUrl
             );
           } catch (error) {
             const message =
@@ -447,8 +642,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Register auth commands with refresh callback
     try {
       registerAuthCommands(context, authService, async () => {
-        await updateStatus();
         await treeDataProvider.refresh();
+        await updateDiagnostics(treeDataProvider);
+        await updateStatus();
       });
       outputChannel.appendLine('[DevGrid] Auth commands registered');
     } catch (error) {
@@ -461,6 +657,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Initialize tree data provider
     try {
       await treeDataProvider.initialize();
+      await updateDiagnostics(treeDataProvider);
       outputChannel.appendLine('[DevGrid] Tree data provider initialized');
     } catch (error) {
       outputChannel.appendLine(
@@ -575,6 +772,8 @@ export function deactivate(): void {
   stopAutoRefresh();
   statusBarItem?.dispose();
   statusBarItem = undefined;
+  diagnosticsService?.dispose();
+  diagnosticsService = undefined;
   serviceContainer?.clear();
   serviceContainer = undefined;
 }
@@ -610,6 +809,11 @@ function startAutoRefresh(
       outputChannel.appendLine('[DevGrid] Auto-refresh skipped (refresh already in progress)');
       return;
     }
+    
+    if (autoRefreshPaused) {
+      outputChannel.appendLine('[DevGrid] Auto-refresh skipped (paused by user)');
+      return;
+    }
 
     // Check if authenticated before refreshing
     const isAuthenticated = await authService.isAuthenticated();
@@ -622,6 +826,7 @@ function startAutoRefresh(
       autoRefreshInProgress = true;
       outputChannel.appendLine('[DevGrid] Auto-refresh triggered');
       await treeDataProvider.refresh();
+      await updateDiagnostics(treeDataProvider);
       await updateStatus();
       outputChannel.appendLine('[DevGrid] Auto-refresh completed');
     } catch (error) {
@@ -660,6 +865,31 @@ async function updateStatusBar(
 
   statusBarItem.text = treeDataProvider.getStatusText();
   statusBarItem.command = 'devgrid.refresh';
+}
+
+/**
+ * Updates diagnostics based on current vulnerabilities
+ */
+async function updateDiagnostics(
+  treeDataProvider: DevGridTreeDataProvider
+): Promise<void> {
+  if (!diagnosticsService) {
+    return;
+  }
+
+  try {
+    const vulnerabilities = treeDataProvider.getVulnerabilities();
+    if (vulnerabilities) {
+      await diagnosticsService.updateDiagnostics(vulnerabilities);
+    } else {
+      diagnosticsService.clear();
+    }
+  } catch (error) {
+    const logger = serviceContainer?.get('logger') as ILogger | undefined;
+    logger?.warn('Failed to update diagnostics', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 function createConfigWatcher(

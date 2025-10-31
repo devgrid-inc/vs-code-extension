@@ -56,6 +56,23 @@ export class DevGridClientService implements IDevGridClient {
         }
       }
 
+      // Check repo-component linkage
+      if (bundle.component?.id && repositoryDetails) {
+        const linkageResult = this.entityResolver.checkRepoComponentLinkage(
+          bundle.component.id,
+          repositoryDetails
+        );
+        bundle.linkageStatus = {
+          repoComponentLinked: linkageResult.linked,
+          message: linkageResult.message,
+        };
+        this.logger.debug('Linkage check completed', {
+          componentId: bundle.component.id,
+          repositoryId: bundle.repository?.id,
+          linked: linkageResult.linked,
+        });
+      }
+
       // Load application details
       const applicationDetails = await this.entityResolver.loadApplicationDetails(context, componentDetails);
       if (applicationDetails) {

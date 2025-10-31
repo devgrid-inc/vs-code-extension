@@ -10,10 +10,9 @@ interface GraphIncident {
   id?: string | null;
   title?: string | null;
   state?: string | null;
-  openedAt?: string | null;
+  createdAt?: string | null;
   closedAt?: string | null;
-  summary?: string | null;
-  url?: string | null;
+  description?: string | null;
 }
 
 interface EntityIncidentsResponse {
@@ -26,6 +25,9 @@ interface EntityIncidentsResponse {
  * Incident service for DevGrid incidents
  */
 export class IncidentService {
+  private cache = new Map<string, { data: DevGridIncident[]; timestamp: number }>();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
   // eslint-disable-next-line no-useless-constructor -- TypeScript parameter properties for dependency injection
   constructor(
     private graphqlClient: IGraphQLClient,
@@ -34,24 +36,43 @@ export class IncidentService {
   ) {}
 
   /**
+   * Clears the cache for all or specific entity
+   */
+  clearCache(entityId?: string): void {
+    if (entityId) {
+      this.cache.delete(entityId);
+      this.logger.debug('Cleared incidents cache for entity', { entityId });
+    } else {
+      this.cache.clear();
+      this.logger.debug('Cleared all incidents cache');
+    }
+  }
+
+  /**
    * Fetches incidents for an entity
    */
   async fetchIncidents(entityId: string): Promise<DevGridIncident[]> {
     this.logger.debug('Fetching incidents', { entityId });
 
+    // Check cache first
+    const cached = this.cache.get(entityId);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      this.logger.debug('Returning cached incidents', { entityId, count: cached.data.length });
+      return cached.data;
+    }
+
     try {
       const data = await this.graphqlClient.query<EntityIncidentsResponse>(
         `
           query EntityIncidents($entityId: ID!, $limit: Int!) {
-            incidents(filter: { entityId: $entityId }, pagination: { limit: $limit }) {
+            incidents(filter: { affectedApplicationIds: [$entityId] }, pagination: { limit: $limit }) {
               items {
                 id
                 title
                 state
-                openedAt
+                createdAt
                 closedAt
-                summary
-                url
+                description
               }
             }
           }
@@ -74,16 +95,22 @@ export class IncidentService {
           id: item.id,
           title: item.title,
           state: item.state,
-          openedAt: item.openedAt ?? undefined,
+          openedAt: item.createdAt ?? undefined, // Use createdAt instead of openedAt
           closedAt: item.closedAt ?? undefined,
-          summary: item.summary ?? undefined,
-          url: item.url ?? undefined,
+          summary: item.description ?? undefined, // Use description instead of summary
+          url: undefined, // Not available on Incident type
         });
       }
 
       this.logger.debug('Fetched incidents', {
         entityId,
         count: result.length,
+      });
+
+      // Cache the result
+      this.cache.set(entityId, {
+        data: result,
+        timestamp: Date.now(),
       });
 
       return result;

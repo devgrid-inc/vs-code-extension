@@ -145,6 +145,11 @@ export interface DevGridDependency {
   url?: string;
 }
 
+export interface DevGridLinkageStatus {
+  repoComponentLinked: boolean | null;
+  message: string;
+}
+
 export interface DevGridInsightBundle {
   application?: DevGridEntitySummary;
   component?: DevGridEntitySummary;
@@ -152,6 +157,7 @@ export interface DevGridInsightBundle {
   vulnerabilities: DevGridVulnerability[];
   incidents: DevGridIncident[];
   dependencies: DevGridDependency[];
+  linkageStatus?: DevGridLinkageStatus;
 }
 
 export interface DevGridTreeItemData {

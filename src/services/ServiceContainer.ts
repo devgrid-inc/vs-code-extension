@@ -152,7 +152,7 @@ export class ServiceContainer {
   /**
    * Gets the logger service
    */
-  private getLogger(): ILogger {
+  getLogger(): ILogger {
     return this.get('logger', () => {
       const logger = new LoggerService(this.outputChannel);
       logger.setLevel(this.logLevel);

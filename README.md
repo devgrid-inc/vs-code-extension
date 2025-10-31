@@ -176,6 +176,18 @@ npm run package
 vsce publish
 ```
 
+## 🔐 Privacy & Security
+
+Your data security and privacy are important to us:
+
+- **No Data Collection**: We don't collect telemetry, analytics, or usage data
+- **Secure Authentication**: OAuth 2.0 with tokens stored in VS Code's encrypted secret storage
+- **Local Processing**: All data stays on your machine, only API calls go to DevGrid
+- **HTTPS Only**: All communication encrypted with TLS
+- **Open Source**: Full source code available for audit
+
+For complete details, see our [Privacy Policy](PRIVACY.md).
+
 ## 📄 License
 
 This extension is licensed under the [MIT License](LICENSE).

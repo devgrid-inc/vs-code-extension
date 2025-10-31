@@ -51,7 +51,36 @@ export class GitService implements IGitService {
    */
   async getRemoteUrl(startPath: string, remote = 'origin'): Promise<string | undefined> {
     try {
-      return await this.runGit(['remote', 'get-url', remote], startPath);
+      const output = await this.runGit(['remote', '-v'], startPath);
+      if (!output) {
+        return undefined;
+      }
+
+      // Parse output from "git remote -v"
+      // Format: "origin\thttps://github.com/user/repo.git (fetch)"
+      //         "origin\thttps://github.com/user/repo.git (push)"
+      const lines = output.split('\n');
+      for (const line of lines) {
+        // Look for lines matching the specified remote (tab-separated)
+        if (line.startsWith(`${remote}\t`)) {
+          // Split by tab: [remote_name, url_with_suffix]
+          const parts = line.split('\t');
+          if (parts.length >= 2) {
+            // Extract URL by removing " (fetch)" or " (push)" suffix
+            const url = parts[1].replace(/\s+\(fetch\)|\s+\(push\)$/, '').trim();
+            if (url) {
+              return url;
+            }
+          }
+        }
+      }
+
+      this.logger.debug('Remote not found in git remote -v output', { 
+        startPath, 
+        remote,
+        output 
+      });
+      return undefined;
     } catch (error) {
       this.logger.debug('Failed to get remote URL', { 
         startPath, 

@@ -10,8 +10,10 @@ import type {
   DevGridVulnerability,
   DevGridIncident,
   DevGridDependency,
+  DevGridLinkageStatus,
 } from "./types";
 import { validateApiUrl } from "./utils/validation";
+import { hasValidYamlConfig } from "./utils/yamlValidator";
 
 export class DevGridTreeDataProvider
   implements vscode.TreeDataProvider<DevGridTreeItem>
@@ -36,7 +38,7 @@ export class DevGridTreeDataProvider
   ) {
     this.serviceContainer = serviceContainer;
     this.authService = authService;
-    this.logger = serviceContainer.get('logger');
+    this.logger = serviceContainer.getLogger();
   }
 
   async initialize(): Promise<void> {
@@ -78,6 +80,31 @@ export class DevGridTreeDataProvider
         this.errorMessage = "Sign in with DevGrid to fetch insights.";
         this.insights = undefined;
         this.logger.info("No OAuth access token available");
+        return;
+      }
+
+      // Check for valid YAML config after authentication
+      const hasYaml = await hasValidYamlConfig();
+      if (!hasYaml) {
+        this.errorMessage = "No valid devgrid.yml found. Set up your configuration to see insights.";
+        this.insights = undefined;
+        this.logger.info("No valid YAML config found");
+        
+        // Show prominent notification when attempting to use features
+        void vscode.window.showWarningMessage(
+          'DevGrid: No valid devgrid.yml file found. Set up your configuration to see insights.',
+          'Create Template',
+          'Setup Guide',
+          'Learn More'
+        ).then(action => {
+          if (action === 'Create Template') {
+            void vscode.commands.executeCommand('devgrid.createYamlTemplate');
+          } else if (action === 'Setup Guide') {
+            void vscode.commands.executeCommand('devgrid.openSetupGuide');
+          } else if (action === 'Learn More') {
+            void vscode.env.openExternal(vscode.Uri.parse('https://docs.devgrid.io/docs/devgrid-project-yaml'));
+          }
+        });
         return;
       }
 
@@ -161,6 +188,18 @@ export class DevGridTreeDataProvider
     return renderTemplate(urlTemplate, valueMap);
   }
 
+  getLinkageStatus(): DevGridLinkageStatus | undefined {
+    return this.insights?.linkageStatus;
+  }
+
+  getRepositoryUrl(): string | undefined {
+    return this.insights?.repository?.url;
+  }
+
+  getVulnerabilities(): DevGridVulnerability[] | undefined {
+    return this.insights?.vulnerabilities;
+  }
+
   getTreeItem(element: DevGridTreeItem): vscode.TreeItem {
     return element;
   }
@@ -232,8 +271,8 @@ export class DevGridTreeDataProvider
       return [DevGridTreeItem.empty("Repository not matched in DevGrid.")];
     }
 
-    const repo = this.insights.repository;
-    return [
+    const { repository: repo, linkageStatus } = this.insights;
+    const items: DevGridTreeItem[] = [
       DevGridTreeItem.detail(`Name: ${repo.name ?? "Unknown"}`, "repo"),
       repo.slug
         ? DevGridTreeItem.detail(`Slug: ${repo.slug}`, "symbol-method")
@@ -244,10 +283,28 @@ export class DevGridTreeDataProvider
       repo.description
         ? DevGridTreeItem.detail(repo.description, "note")
         : undefined,
-      repo.url
-        ? DevGridTreeItem.link("Open in DevGrid", repo.url, "globe")
-        : undefined,
-    ].filter((item): item is DevGridTreeItem => Boolean(item));
+    ];
+
+    // Add linkage status indicator
+    if (linkageStatus) {
+      const linkageIcon = linkageStatus.repoComponentLinked === true 
+        ? "check" 
+        : linkageStatus.repoComponentLinked === false 
+        ? "warning" 
+        : "question";
+      const linkageLabel = linkageStatus.repoComponentLinked === true
+        ? `✓ ${linkageStatus.message}`
+        : linkageStatus.repoComponentLinked === false
+        ? `⚠ ${linkageStatus.message}`
+        : `? ${linkageStatus.message}`;
+      items.push(DevGridTreeItem.detail(linkageLabel, linkageIcon));
+    }
+
+    if (repo.url) {
+      items.push(DevGridTreeItem.link("Open in SCM", repo.url, "globe"));
+    }
+
+    return items.filter((item): item is DevGridTreeItem => Boolean(item));
   }
 
   private getComponentItems(): DevGridTreeItem[] {
@@ -256,6 +313,10 @@ export class DevGridTreeDataProvider
     }
 
     const {component} = this.insights;
+    const componentDevGridUrl = component.id
+      ? `https://app.devgrid.io/inventory/component/${component.id}`
+      : undefined;
+    
     return [
       DevGridTreeItem.detail(`Name: ${component.name ?? "Unknown"}`, "package"),
       component.slug
@@ -267,8 +328,8 @@ export class DevGridTreeDataProvider
       component.description
         ? DevGridTreeItem.detail(component.description, "note")
         : undefined,
-      component.url
-        ? DevGridTreeItem.link("Open Component", component.url, "globe")
+      componentDevGridUrl
+        ? DevGridTreeItem.link("Open in DevGrid", componentDevGridUrl, "globe")
         : undefined,
     ].filter((item): item is DevGridTreeItem => Boolean(item));
   }
@@ -279,6 +340,10 @@ export class DevGridTreeDataProvider
     }
 
     const {application} = this.insights;
+    const applicationDevGridUrl = application.id
+      ? `https://app.devgrid.io/inventory/application/${application.id}`
+      : undefined;
+    
     return [
       DevGridTreeItem.detail(
         `Name: ${application.name ?? "Unknown"}`,
@@ -293,8 +358,8 @@ export class DevGridTreeDataProvider
       application.description
         ? DevGridTreeItem.detail(application.description, "note")
         : undefined,
-      application.url
-        ? DevGridTreeItem.link("Open Application", application.url, "globe")
+      applicationDevGridUrl
+        ? DevGridTreeItem.link("Open in DevGrid", applicationDevGridUrl, "globe")
         : undefined,
     ].filter((item): item is DevGridTreeItem => Boolean(item));
   }

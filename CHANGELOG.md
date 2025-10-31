@@ -1,8 +1,21 @@
 # Changelog
 
-## [Unreleased]
+All notable changes to the DevGrid VS Code Extension will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.0.1] - October 31, 2025
+
+Initial release of the DevGrid VS Code Extension.
 
 ### ✨ New Features
+
+- **DevGrid Insights Tree View**: Comprehensive view of vulnerabilities, incidents, and dependencies
+  - Hierarchical display of security and operational insights
+  - Severity-based organization (Critical, High, Medium, Low)
+  - Context-aware entity resolution (repository, component, application)
+  - Real-time synchronization with DevGrid platform
 
 - **AI-Powered Vulnerability Analysis**: Added "Copy Instructions" and "Send to Chat" buttons to vulnerability details
   - Generate comprehensive remediation prompts for AI chat assistants
@@ -18,58 +31,87 @@
   - References and external links
   - Metadata including scan type, location, and dates
 
-- **Professional Marketplace Presentation**
-  - Enterprise-focused branding and messaging
-  - Professional icon and banner assets
-  - Comprehensive README with usage examples and troubleshooting
-  - Security and privacy section highlighting enterprise readiness
-  - MIT license and proper attribution
+- **Authentication & Security**
+  - OAuth 2.0 device flow authentication
+  - Secure token storage via VS Code secrets API
+  - Automatic token refresh
+  - Sign in/out commands
+
+- **Configuration Management**
+  - Optional `devgrid.yaml` for custom entity identifiers
+  - Configurable API endpoints
+  - Auto-refresh settings (enabled by default, 5-minute interval)
+  - Adjustable display limits (default: 100 items, max: 500)
+  - Debug logging levels
+
+- **Developer Commands**
+  - Refresh insights manually
+  - Clear cache
+  - Pause/resume auto-refresh
+  - Open settings
+  - Open DevGrid dashboard
+  - Create YAML template with auto-filled values
+  - YAML setup guide
+
+- **Keyboard Shortcuts**
+  - `Ctrl+Shift+R Ctrl+Shift+D` (Windows/Linux) / `Cmd+Shift+R Cmd+Shift+D` (Mac) - Refresh insights
 
 ### 🔧 Technical Improvements
 
 - **Architecture Refactoring**: Complete service layer refactoring for testability
   - Dependency injection container (`ServiceContainer`)
   - Interface-based services (`ILogger`, `IGraphQLClient`, `IHttpClient`)
-  - Modular service classes (`VulnerabilityService`, `EntityResolver`, etc.)
-  - Comprehensive unit test coverage (54 tests)
+  - Modular service classes (`VulnerabilityService`, `IncidentService`, `DependencyService`, `EntityResolver`)
+  - Comprehensive unit test coverage (60+ tests)
 
-- **GraphQL Query Optimization**: Improved vulnerability data fetching
-  - Dual-query approach for maximum compatibility
+- **Performance Optimizations**
+  - 5-minute TTL caching for all API responses
+  - Request deduplication
+  - Configurable cache clearing
+  - Optimized tree view rendering
+
+- **GraphQL Client**: Type-safe GraphQL communication
+  - Dual-query approach for maximum API compatibility
   - Efficient caching with TTL-based expiration
-  - Better error handling and logging
+  - Retry logic with exponential backoff
+  - Comprehensive error handling and logging
+
+- **HTTP Client**: Robust network layer
+  - Automatic retry with exponential backoff (3 retries default)
+  - Configurable timeouts
+  - Request/response logging for debugging
 
 - **Webview Architecture**: Enhanced panel management
   - Message passing system for user interactions
   - Responsive HTML/CSS with VS Code theming
   - Proper disposal and memory management
+  - Security-conscious content loading
 
 - **Development Experience**: Professional development setup
   - ESLint and Prettier configuration
   - Vitest testing framework with comprehensive mocks
   - TypeScript strict mode compliance
   - Build and packaging optimizations
-
-### 🐛 Bug Fixes
-
-- Fixed vulnerability ID parameter passing in tree item commands
-- Improved authentication token refresh handling
-- Enhanced error messages and user feedback
-- Fixed GraphQL query parameter validation
+  - Pre-package validation script
 
 ### 📚 Documentation
 
-- Complete README rewrite with enterprise focus
-- Added troubleshooting section
-- Comprehensive command reference
+- Comprehensive README with enterprise focus
+- CONTRIBUTING.md with development guidelines
+- Troubleshooting section
+- Complete command reference
 - Security and privacy documentation
-- Development and contribution guidelines
+- Architecture overview
+- Testing guidelines
 
-## 0.0.1 (Initial Release)
+### 🛠️ Build & Tooling
 
-- DevGrid insights tree view integration
-- Status bar synchronization indicators
-- OAuth-based authentication with secure token storage
-- Configurable API endpoints via `devgrid.yaml`
-- Repository, component, and application metadata display
-- Basic vulnerability, incident, and dependency listings
-- Git remote auto-detection for repository linking
+- esbuild for fast compilation
+- Production bundle minification
+- Source maps for debugging
+- Automated validation before packaging
+- VS Code extension packaging with vsce
+
+---
+
+For more information, visit [DevGrid Documentation](https://docs.devgrid.io) or our [GitHub repository](https://github.com/devgrid-inc/vs-code-extension).

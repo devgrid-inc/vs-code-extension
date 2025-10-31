@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 
 import type { AuthService } from "../authService";
+import { hasValidYamlConfig } from "../utils/yamlValidator";
 
 export function registerAuthCommands(
   context: vscode.ExtensionContext,
@@ -15,6 +16,9 @@ export function registerAuthCommands(
         if (onAuthChange) {
           await onAuthChange();
         }
+        
+        // Check for YAML config after successful authentication
+        void checkAndPromptForYaml();
       }
     } catch (error) {
       await vscode.window.showErrorMessage(`Failed to sign in: ${String(error)}`);
@@ -70,4 +74,34 @@ export function registerAuthCommands(
   });
 
   context.subscriptions.push(signInCommand, signOutCommand, showAccountCommand);
+}
+
+/**
+ * Checks for YAML config and shows gentle prompt if missing
+ */
+async function checkAndPromptForYaml(): Promise<void> {
+  try {
+    const hasYaml = await hasValidYamlConfig();
+    if (!hasYaml) {
+      // Show gentle notification with options
+      const action = await vscode.window.showInformationMessage(
+        'DevGrid: No devgrid.yml found. Would you like help setting one up?',
+        'Create Template',
+        'View Guide',
+        'Dismiss'
+      );
+
+      if (action === 'Create Template') {
+        await vscode.commands.executeCommand('devgrid.createYamlTemplate');
+      } else if (action === 'View Guide') {
+        await vscode.commands.executeCommand('devgrid.openSetupGuide');
+      }
+    }
+  } catch (error) {
+    // Silently fail - this is a non-critical check
+    const outputChannel = vscode.window.createOutputChannel('DevGrid');
+    outputChannel.appendLine(
+      `[DevGrid] YAML check failed: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
 }

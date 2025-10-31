@@ -12,6 +12,11 @@ vi.mock('../devgridConfig', () => ({
   loadDevGridContext: vi.fn(),
 }));
 
+// Mock yamlValidator module
+vi.mock('../utils/yamlValidator', () => ({
+  hasValidYamlConfig: vi.fn(),
+}));
+
 describe('DevGridTreeDataProvider', () => {
   let provider: DevGridTreeDataProvider;
   let mockServiceContainer: ServiceContainer;
@@ -619,6 +624,114 @@ describe('DevGridTreeDataProvider', () => {
 
       // Should fire at start and end of refresh
       expect(fireListener).toHaveBeenCalled();
+    });
+  });
+
+  describe('YAML Validation on Refresh', () => {
+    beforeEach(() => {
+      // Set up default mocks for successful refresh
+      mockLoadDevGridContext.mockResolvedValue({
+        identifiers: { repositorySlug: 'test/repo' },
+        config: {},
+      });
+      mockClient.fetchInsights.mockResolvedValue({
+        repository: { id: 'repo-123', name: 'Test Repo', slug: 'test/repo' },
+        vulnerabilities: [],
+        incidents: [],
+        dependencies: [],
+      });
+    });
+
+    it('should show warning and stop refresh when YAML is missing', async () => {
+      const { hasValidYamlConfig } = await import('../utils/yamlValidator');
+      (hasValidYamlConfig as any) = vi.fn().mockResolvedValue(false);
+
+      (vscode.window.showWarningMessage as any) = vi.fn(() => Promise.resolve(undefined));
+      (vscode.commands.executeCommand as any) = vi.fn();
+
+      await provider.refresh();
+
+      expect(hasValidYamlConfig).toHaveBeenCalled();
+      expect(mockClient.fetchInsights).not.toHaveBeenCalled();
+      expect(vscode.window.showWarningMessage).toHaveBeenCalledWith(
+        'DevGrid: No valid devgrid.yml file found. Set up your configuration to see insights.',
+        'Create Template',
+        'Setup Guide',
+        'Learn More'
+      );
+      expect(provider.getStatusText()).toContain('No valid devgrid.yml found');
+    });
+
+    it('should continue refresh when YAML is valid', async () => {
+      const { hasValidYamlConfig } = await import('../utils/yamlValidator');
+      (hasValidYamlConfig as any) = vi.fn().mockResolvedValue(true);
+
+      await provider.refresh();
+
+      expect(hasValidYamlConfig).toHaveBeenCalled();
+      expect(mockClient.fetchInsights).toHaveBeenCalled();
+      expect(vscode.window.showWarningMessage).not.toHaveBeenCalled();
+    });
+
+    it('should not check YAML when not authenticated', async () => {
+      (mockAuthService.getAccessToken as any) = vi.fn().mockResolvedValue(undefined);
+      const { hasValidYamlConfig } = await import('../utils/yamlValidator');
+      (hasValidYamlConfig as any) = vi.fn();
+
+      await provider.refresh();
+
+      // Should not check YAML if not authenticated (fails earlier)
+      expect(hasValidYamlConfig).not.toHaveBeenCalled();
+      expect(provider.getStatusText()).toContain('Sign in');
+    });
+
+    it('should handle YAML check action: Create Template', async () => {
+      const { hasValidYamlConfig } = await import('../utils/yamlValidator');
+      (hasValidYamlConfig as any) = vi.fn().mockResolvedValue(false);
+
+      (vscode.window.showWarningMessage as any) = vi.fn(() => Promise.resolve('Create Template'));
+      (vscode.commands.executeCommand as any) = vi.fn();
+
+      await provider.refresh();
+
+      expect(vscode.commands.executeCommand).toHaveBeenCalledWith('devgrid.createYamlTemplate');
+    });
+
+    it('should handle YAML check action: Setup Guide', async () => {
+      const { hasValidYamlConfig } = await import('../utils/yamlValidator');
+      (hasValidYamlConfig as any) = vi.fn().mockResolvedValue(false);
+
+      (vscode.window.showWarningMessage as any) = vi.fn(() => Promise.resolve('Setup Guide'));
+      (vscode.commands.executeCommand as any) = vi.fn();
+
+      await provider.refresh();
+
+      expect(vscode.commands.executeCommand).toHaveBeenCalledWith('devgrid.openSetupGuide');
+    });
+
+    it('should handle YAML check action: Learn More', async () => {
+      const { hasValidYamlConfig } = await import('../utils/yamlValidator');
+      (hasValidYamlConfig as any) = vi.fn().mockResolvedValue(false);
+
+      (vscode.window.showWarningMessage as any) = vi.fn(() => Promise.resolve('Learn More'));
+      (vscode.env.openExternal as any) = vi.fn();
+
+      await provider.refresh();
+
+      expect(vscode.env.openExternal).toHaveBeenCalledWith(
+        vscode.Uri.parse('https://docs.devgrid.io/docs/devgrid-project-yaml')
+      );
+    });
+
+    it('should handle YAML check errors gracefully', async () => {
+      const { hasValidYamlConfig } = await import('../utils/yamlValidator');
+      (hasValidYamlConfig as any) = vi.fn().mockRejectedValue(new Error('YAML check failed'));
+
+      // Should not throw, just log error and continue
+      await expect(provider.refresh()).resolves.not.toThrow();
+      
+      // Should still show warning since validation failed
+      expect(vscode.window.showWarningMessage).toHaveBeenCalled();
     });
   });
 });
