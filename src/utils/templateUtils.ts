@@ -84,7 +84,7 @@ export function renderTemplateWithFallbacks(
  * @param context - The context object with variable values
  * @returns The first fully renderable template or undefined if none can be rendered
  * @example
- * renderFirstValidTemplate(['/repos/{repositoryId}', '/repos/{repositorySlug}'], { repositoryId: '123' }) // '/repos/123'
+ * renderFirstValidTemplate(['/repos/{repositoryId}', '/repos/{componentSlug}'], { repositoryId: '123' }) // '/repos/123'
  */
 export function renderFirstValidTemplate(
   templates: string[],

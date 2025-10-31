@@ -25,22 +25,3 @@ export async function getCurrentBranch(startPath: string): Promise<string | unde
 export async function getRemoteUrl(startPath: string, remote = "origin"): Promise<string | undefined> {
   return runGit(["remote", "get-url", remote], startPath);
 }
-
-export function deriveRepositorySlug(remoteUrl?: string): string | undefined {
-  if (!remoteUrl) {
-    return undefined;
-  }
-
-  const sshMatch = remoteUrl.match(/@(.*):(.+?)(\.git)?$/);
-  if (sshMatch) {
-    return sshMatch[2];
-  }
-
-  try {
-    const parsed = new URL(remoteUrl);
-    const slug = parsed.pathname.replace(/^\/+/, "").replace(/\.git$/, "");
-    return slug || undefined;
-  } catch {
-    return undefined;
-  }
-}

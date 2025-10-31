@@ -8,16 +8,11 @@ vi.mock('child_process', () => ({
   execFile: vi.fn(),
 }));
 
-// Mock urlUtils module
-vi.mock('../../utils/urlUtils', () => ({
-  deriveRepositorySlug: vi.fn(),
-}));
 
 describe('GitService', () => {
   let gitService: GitService;
   let mockLogger: ILogger;
   let mockExecFile: any;
-  let mockDeriveRepositorySlug: any;
 
   beforeEach(async () => {
     mockLogger = {
@@ -34,9 +29,6 @@ describe('GitService', () => {
     // Get mocked modules
     const childProcess = await import('child_process');
     mockExecFile = vi.mocked(childProcess.execFile);
-
-    const urlUtils = await import('../../utils/urlUtils');
-    mockDeriveRepositorySlug = vi.mocked(urlUtils.deriveRepositorySlug);
 
     gitService = new GitService(mockLogger);
   });
@@ -240,63 +232,6 @@ describe('GitService', () => {
     });
   });
 
-  describe('deriveRepositorySlug', () => {
-    it('should derive repository slug from remote URL', () => {
-      mockDeriveRepositorySlug.mockReturnValue('user/repo');
-
-      const result = gitService.deriveRepositorySlug('https://github.com/user/repo.git');
-
-      expect(result).toBe('user/repo');
-      expect(mockDeriveRepositorySlug).toHaveBeenCalledWith('https://github.com/user/repo.git');
-    });
-
-    it('should return undefined for empty remote URL', () => {
-      const result = gitService.deriveRepositorySlug('');
-
-      expect(result).toBeUndefined();
-      expect(mockDeriveRepositorySlug).not.toHaveBeenCalled();
-    });
-
-    it('should return undefined for undefined remote URL', () => {
-      const result = gitService.deriveRepositorySlug(undefined);
-
-      expect(result).toBeUndefined();
-      expect(mockDeriveRepositorySlug).not.toHaveBeenCalled();
-    });
-
-    it('should handle errors from deriveRepositorySlug utility', () => {
-      mockDeriveRepositorySlug.mockImplementation(() => {
-        throw new Error('Invalid URL format');
-      });
-
-      const result = gitService.deriveRepositorySlug('invalid-url');
-
-      expect(result).toBeUndefined();
-      expect(mockLogger.debug).toHaveBeenCalledWith(
-        'Failed to derive repository slug',
-        expect.objectContaining({
-          remoteUrl: 'invalid-url',
-        })
-      );
-    });
-
-    it('should derive slug from various URL formats', () => {
-      const testCases = [
-        { url: 'https://github.com/user/repo.git', expected: 'user/repo' },
-        { url: 'git@github.com:user/repo.git', expected: 'user/repo' },
-        { url: 'https://gitlab.com/user/repo', expected: 'user/repo' },
-      ];
-
-      testCases.forEach(({ url, expected }) => {
-        mockDeriveRepositorySlug.mockReturnValue(expected);
-
-        const result = gitService.deriveRepositorySlug(url);
-
-        expect(result).toBe(expected);
-      });
-    });
-  });
-
   describe('error handling', () => {
     it('should handle errors gracefully in git commands', async () => {
       mockExecFile.mockImplementation((cmd, args, options, callback) => {
@@ -313,16 +248,6 @@ describe('GitService', () => {
       // runGit silently catches errors and returns undefined
     });
 
-    it('should handle non-Error objects in deriveRepositorySlug', () => {
-      mockDeriveRepositorySlug.mockImplementation(() => {
-        throw 'string error';
-      });
-
-      const result = gitService.deriveRepositorySlug('invalid-url');
-
-      expect(result).toBeUndefined();
-      expect(mockLogger.debug).toHaveBeenCalled();
-    });
   });
 });
 

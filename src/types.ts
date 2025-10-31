@@ -1,5 +1,4 @@
 export interface DevGridIdentifiers {
-  repositorySlug?: string;
   repositoryId?: string;
   componentSlug?: string;
   componentId?: string;

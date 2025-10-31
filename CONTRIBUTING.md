@@ -130,7 +130,43 @@ vs-code-extension/
    npm run compile       # Build extension
    ```
 
-4. **Debug in VS Code:**
+4. **Commit your changes using Conventional Commits:**
+   
+   **Interactive Commit (Recommended):**
+   ```bash
+   git add .
+   npm run commit  # Interactive commit with commitizen
+   ```
+   
+   **Manual Commit:**
+   ```bash
+   git add .
+   git commit -m "feat: add your feature description"
+   git commit -m "fix: resolve authentication issue"
+   git commit -m "docs: update installation guide"
+   ```
+   
+   **Commit Message Format:**
+   ```
+   <type>(<scope>): <subject>
+   
+   [optional body]
+   
+   [optional footer]
+   ```
+   
+   **Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`
+   
+   **Breaking Changes:**
+   ```bash
+   feat(auth)!: remove deprecated signOut command
+   
+   BREAKING CHANGE: The signOut command has been removed. Use devgrid.signOut instead.
+   ```
+   
+   For detailed guidelines, see [VERSIONING.md](VERSIONING.md).
+
+5. **Debug in VS Code:**
    - Press `F5` to launch extension development host
    - Test all affected functionality
    - Check the DevGrid output channel for errors

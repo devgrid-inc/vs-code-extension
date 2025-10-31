@@ -52,33 +52,6 @@ export function extractRepoNameFromUrl(url: string): string | undefined {
 }
 
 /**
- * Derives repository slug from remote URL
- * @param remoteUrl - The remote URL to derive the slug from
- * @returns The repository slug or undefined if unable to derive
- * @example
- * deriveRepositorySlug('git@github.com:org/repo.git') // 'org/repo'
- * deriveRepositorySlug('https://github.com/org/repo.git') // 'org/repo'
- */
-export function deriveRepositorySlug(remoteUrl?: string): string | undefined {
-  if (!remoteUrl) {
-    return undefined;
-  }
-
-  const sshMatch = remoteUrl.match(/@(.*):(.+?)(\.git)?$/);
-  if (sshMatch) {
-    return sshMatch[2];
-  }
-
-  try {
-    const parsed = new URL(remoteUrl);
-    const slug = parsed.pathname.replace(/^\/+/, '').replace(/\.git$/, '');
-    return slug || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-/**
  * Sanitizes URL for logging by masking sensitive information
  * @param url - The URL to sanitize
  * @returns The sanitized URL

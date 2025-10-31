@@ -35,8 +35,17 @@ tsconfig.json
 tsconfig.*.json
 **/*.tsbuildinfo
 
+# Versioning & commit tools
+.versionrc.json
+.commitlintrc.json
+.czrc
+.husky/
+.release-it.json
+VERSIONING.md
+scripts/test-commit-validation.sh
+
 # Large demo files (consider hosting externally)
-auto-remediation-usinglocalbot.gif
+media/auto-remediation-usinglocalbot.gif
 
 # GraphQL schema (development only)
 schema.graphql

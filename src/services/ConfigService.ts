@@ -80,7 +80,6 @@ export class ConfigService implements IConfigLoader {
 
     // Load from identifiers section
     if (config.identifiers) {
-      setIfEmpty('repositorySlug', config.identifiers.repositorySlug);
       setIfEmpty('repositoryId', config.identifiers.repositoryId);
       setIfEmpty('componentSlug', config.identifiers.componentSlug);
       setIfEmpty('componentId', config.identifiers.componentId);
@@ -89,7 +88,6 @@ export class ConfigService implements IConfigLoader {
     }
 
     // Load from root level (legacy support)
-    setIfEmpty('repositorySlug', fallback(cfg => cfg.repositorySlug as string));
     setIfEmpty('repositoryId', fallback(cfg => cfg.repositoryId as string));
     setIfEmpty('componentSlug', fallback(cfg => cfg.componentSlug as string));
     setIfEmpty('componentId', fallback(cfg => cfg.componentId as string));
@@ -97,7 +95,6 @@ export class ConfigService implements IConfigLoader {
     setIfEmpty('applicationId', fallback(cfg => cfg.applicationId as string));
 
     // Load from nested objects
-    setIfEmpty('repositorySlug', fallback(cfg => (cfg.repository as any)?.slug));
     setIfEmpty('componentSlug', fallback(cfg => (cfg.component as any)?.slug));
     setIfEmpty('componentId', fallback(cfg => (cfg.component as any)?.id));
     setIfEmpty('applicationSlug', fallback(cfg => (cfg.application as any)?.slug));

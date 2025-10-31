@@ -5,6 +5,7 @@ import { DevGridAuthProvider } from './authProvider';
 import { AuthService } from './authService';
 import { registerAuthCommands } from './commands/authCommands';
 import { DevGridTreeDataProvider } from './devgridTreeDataProvider';
+import type { IGitService } from './interfaces/IGitService';
 import type { ILogger } from './interfaces/ILogger';
 import { DiagnosticsService } from './services/DiagnosticsService';
 import { ServiceContainer } from './services/ServiceContainer';
@@ -499,6 +500,70 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             const message = error instanceof Error ? error.message : String(error);
             outputChannel.appendLine(`[DevGrid] Failed to resume auto-refresh: ${message}`);
             await vscode.window.showErrorMessage(`DevGrid: Failed to resume auto-refresh: ${message}`);
+          }
+        }),
+
+        // Debug Git command - helps troubleshoot Git remote URL fetching
+        vscode.commands.registerCommand('devgrid.debugGit', async () => {
+          try {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+              await vscode.window.showErrorMessage('DevGrid: No workspace folder found');
+              return;
+            }
+
+            const gitService = serviceContainer?.get('gitService') as IGitService | undefined;
+            if (!gitService) {
+              await vscode.window.showErrorMessage('DevGrid: Git service not available');
+              return;
+            }
+
+            const logger = serviceContainer?.get('logger') as ILogger | undefined;
+            logger?.info('Running Git diagnostics', { 
+              workspacePath: workspaceFolder.uri.fsPath 
+            });
+
+            // Get repository information
+            const repoRoot = await gitService.getRepositoryRoot(workspaceFolder.uri.fsPath);
+            const currentBranch = repoRoot ? await gitService.getCurrentBranch(repoRoot) : undefined;
+            const remoteUrl = repoRoot ? await gitService.getRemoteUrl(repoRoot) : undefined;
+
+            // Log detailed information
+            logger?.info('Git diagnostics results', {
+              workspacePath: workspaceFolder.uri.fsPath,
+              repoRoot: repoRoot ?? '(not found)',
+              currentBranch: currentBranch ?? '(not found)',
+              remoteUrl: remoteUrl ?? '(not found)',
+              pathEnv: process.env.PATH?.substring(0, 200),
+            });
+
+            // Show user-friendly message
+            const info = [
+              `**Workspace:** ${workspaceFolder.uri.fsPath}`,
+              `**Repository Root:** ${repoRoot ?? '❌ Not found'}`,
+              `**Current Branch:** ${currentBranch ?? '❌ Not found'}`,
+              `**Remote URL:** ${remoteUrl ?? '❌ Not found'}`,
+              '',
+              `_Check the DevGrid output channel for more details_`,
+            ].join('\n\n');
+
+            const result = await vscode.window.showInformationMessage(
+              'Git Diagnostics',
+              { modal: true, detail: info },
+              'Copy to Clipboard',
+              'Open Output'
+            );
+
+            if (result === 'Copy to Clipboard') {
+              await vscode.env.clipboard.writeText(info.replace(/\*\*/g, '').replace(/_/g, ''));
+              await vscode.window.showInformationMessage('Git diagnostics copied to clipboard');
+            } else if (result === 'Open Output') {
+              outputChannel.show();
+            }
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            outputChannel.appendLine(`[DevGrid] Git diagnostics failed: ${message}`);
+            await vscode.window.showErrorMessage(`DevGrid: Git diagnostics failed: ${message}`);
           }
         }),
 

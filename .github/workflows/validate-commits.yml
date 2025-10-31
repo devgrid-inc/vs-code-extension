@@ -1,0 +1,68 @@
+name: Validate Commits
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - '**'  # Validate commits on all branches
+
+jobs:
+  commitlint:
+    name: Validate Commit Messages
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Validate commit messages
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # For PRs, validate all commits in the PR
+            npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+          else
+            # For pushes, validate the last commit
+            npx commitlint --from HEAD~1 --to HEAD --verbose
+          fi
+      
+      - name: Check for conventional commits
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "### Commit Message Validation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Count commit types
+          FEAT_COUNT=$(git log ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} --format=%s | grep -c "^feat" || true)
+          FIX_COUNT=$(git log ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} --format=%s | grep -c "^fix" || true)
+          DOCS_COUNT=$(git log ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} --format=%s | grep -c "^docs" || true)
+          OTHER_COUNT=$(git log ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} --format=%s | grep -cE "^(chore|test|refactor|style|perf|build|ci)" || true)
+          
+          echo "**Commit Summary:**" >> $GITHUB_STEP_SUMMARY
+          echo "- ✨ Features: $FEAT_COUNT" >> $GITHUB_STEP_SUMMARY
+          echo "- 🐛 Bug Fixes: $FIX_COUNT" >> $GITHUB_STEP_SUMMARY
+          echo "- 📚 Documentation: $DOCS_COUNT" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔧 Other: $OTHER_COUNT" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ $FEAT_COUNT -gt 0 ] || [ $FIX_COUNT -gt 0 ]; then
+            if [ $FEAT_COUNT -gt 0 ]; then
+              echo "This PR will trigger a **MINOR** version bump (new features)." >> $GITHUB_STEP_SUMMARY
+            else
+              echo "This PR will trigger a **PATCH** version bump (bug fixes)." >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "This PR will **NOT** trigger a version bump (no feat/fix commits)." >> $GITHUB_STEP_SUMMARY
+          fi
+

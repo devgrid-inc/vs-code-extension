@@ -5,7 +5,6 @@ import yaml from "js-yaml";
 import * as vscode from "vscode";
 
 import {
-  deriveRepositorySlug,
   getRemoteUrl,
   getRepositoryRoot,
 } from "./gitUtils";
@@ -141,23 +140,10 @@ export async function loadDevGridContext(
 
 async function enrichIdentifiers(
   identifiers: DevGridIdentifiers,
-  repoPath: string,
-  outputChannel?: vscode.OutputChannel
+  _repoPath: string,
+  _outputChannel?: vscode.OutputChannel
 ): Promise<DevGridIdentifiers> {
-  if (!identifiers.repositorySlug) {
-    const remoteUrl = await getRemoteUrl(repoPath);
-    outputChannel?.appendLine(
-      `[DevGrid:enrichIdentifiers] remoteUrl=${remoteUrl ?? "(none)"}`
-    );
-    const slug = deriveRepositorySlug(remoteUrl);
-    outputChannel?.appendLine(
-      `[DevGrid:enrichIdentifiers] derived slug=${slug ?? "(none)"}`
-    );
-    if (slug) {
-      identifiers.repositorySlug = slug;
-    }
-  }
-
+  // No enrichment needed anymore - repositorySlug has been removed
   return identifiers;
 }
 
@@ -203,9 +189,6 @@ async function normalizeIdentifiers(
 
   setIfEmpty("repositoryId", fallback((cfg) => cfg.repositoryId));
   setIfEmpty("repositoryId", fallback((cfg) => cfg.repository_id));
-  setIfEmpty("repositorySlug", fallback((cfg) => cfg.repositorySlug));
-  setIfEmpty("repositorySlug", fallback((cfg) => cfg.repository_slug));
-  setIfEmpty("repositorySlug", fallback((cfg) => cfg.repository?.slug));
 
   setIfEmpty("componentId", fallback((cfg) => cfg.componentId));
   setIfEmpty("componentId", fallback((cfg) => cfg.component_id));
@@ -250,21 +233,6 @@ async function normalizeIdentifiers(
       setIfEmpty("componentId", safeString(attributes.custom_id as string));
       setIfEmpty("componentId", safeString(attributes.component_id as string));
 
-      const sourceRepository = safeString(
-        attributes.source_code_repository as string
-      );
-      if (sourceRepository) {
-        setIfEmpty("repositorySlug", deriveRepositorySlug(sourceRepository));
-      }
-
-      setIfEmpty(
-        "repositorySlug",
-        safeString(attributes.repositorySlug as string)
-      );
-      setIfEmpty(
-        "repositorySlug",
-        safeString(attributes.repository_slug as string)
-      );
     }
   }
 

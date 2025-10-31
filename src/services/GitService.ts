@@ -4,7 +4,6 @@ import { promisify } from 'util';
 
 import type { IGitService } from '../interfaces/IGitService';
 import type { ILogger } from '../interfaces/ILogger';
-import { deriveRepositorySlug } from '../utils/urlUtils';
 
 const execFileAsync = promisify(execFile);
 
@@ -85,25 +84,6 @@ export class GitService implements IGitService {
       this.logger.debug('Failed to get remote URL', { 
         startPath, 
         remote, 
-        error: error instanceof Error ? error.message : String(error) 
-      });
-      return undefined;
-    }
-  }
-
-  /**
-   * Derives a repository slug from a remote URL
-   */
-  deriveRepositorySlug(remoteUrl?: string): string | undefined {
-    if (!remoteUrl) {
-      return undefined;
-    }
-
-    try {
-      return deriveRepositorySlug(remoteUrl);
-    } catch (error) {
-      this.logger.debug('Failed to derive repository slug', { 
-        remoteUrl, 
         error: error instanceof Error ? error.message : String(error) 
       });
       return undefined;

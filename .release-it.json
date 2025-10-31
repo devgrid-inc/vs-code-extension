@@ -1,0 +1,30 @@
+{
+  "git": {
+    "commitMessage": "chore(release): ${version}",
+    "requireCleanWorkingDir": true,
+    "requireBranch": false,
+    "requireUpstream": false,
+    "tag": true,
+    "tagName": "v${version}",
+    "tagAnnotation": "Release v${version}",
+    "push": false
+  },
+  "github": {
+    "release": false,
+    "draft": false
+  },
+  "npm": {
+    "publish": false
+  },
+  "hooks": {
+    "before:init": ["npm run check", "npm run validate"],
+    "after:bump": ["npm run bundle"],
+    "after:git:release": "echo 'Release committed and tagged. Push with: git push --follow-tags'"
+  },
+  "plugins": {
+    "vscode": {
+      "enabled": false
+    }
+  }
+}
+

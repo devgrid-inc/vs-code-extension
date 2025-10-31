@@ -66,7 +66,6 @@ describe('DevGridClientService', () => {
   describe('fetchInsights', () => {
     it('should fetch comprehensive insights with all entity types', async () => {
       const identifiers = {
-        repositorySlug: 'user/repo',
         repositoryId: 'repo-123',
         componentSlug: 'my-component',
         componentId: 'comp-456',
@@ -339,7 +338,6 @@ describe('DevGridClientService', () => {
 
     it('should render dashboard URL from template', () => {
       const context = {
-        repositorySlug: 'user/repo',
       };
 
       const url = clientService.renderDashboardUrl(context);
@@ -357,7 +355,6 @@ describe('DevGridClientService', () => {
         {}
       );
 
-      const result = emptyEndpointsService.renderDashboardUrl({ repositorySlug: 'user/repo' });
 
       expect(result).toBeUndefined();
     });

@@ -1,0 +1,101 @@
+name: Publish to Marketplace
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (leave empty for latest release)'
+        required: false
+        type: string
+
+jobs:
+  publish:
+    name: Publish to VS Code Marketplace
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version || github.event.release.tag_name }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Publishing version: $VERSION"
+      
+      - name: Run checks
+        run: |
+          echo "Running quality checks..."
+          npm run lint
+          npm run test:run
+          npm run format:check
+      
+      - name: Validate package
+        run: npm run validate
+      
+      - name: Build extension
+        run: npm run bundle
+      
+      - name: Package extension
+        run: npm run package
+      
+      - name: Verify VSIX exists
+        run: |
+          VSIX_FILE="devgrid-vscode-extension-${{ steps.version.outputs.version }}.vsix"
+          if [ ! -f "$VSIX_FILE" ]; then
+            echo "Error: VSIX file not found: $VSIX_FILE"
+            exit 1
+          fi
+          echo "VSIX file found: $VSIX_FILE"
+          ls -lh *.vsix
+      
+      - name: Publish to VS Code Marketplace
+        run: |
+          # Install vsce if not already in devDependencies
+          if ! npm list @vscode/vsce &>/dev/null; then
+            npm install -g @vscode/vsce
+          fi
+          
+          # Publish the extension
+          npx vsce publish -p ${{ secrets.VSCE_PAT }}
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      
+      - name: Publish to Open VSX Registry
+        continue-on-error: true
+        run: |
+          # Install ovsx if not already installed
+          if ! command -v ovsx &>/dev/null; then
+            npm install -g ovsx
+          fi
+          
+          # Publish to Open VSX (alternative marketplace)
+          ovsx publish -p ${{ secrets.OVSX_PAT }} *.vsix || echo "Open VSX publishing skipped (token not configured)"
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+      
+      - name: Summary
+        run: |
+          echo "### ✅ Published to Marketplace" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Marketplace**: [View Extension](https://marketplace.visualstudio.com/items?itemName=devgrid-inc.devgrid-vscode-extension)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The extension should be available in VS Code within a few minutes." >> $GITHUB_STEP_SUMMARY
+

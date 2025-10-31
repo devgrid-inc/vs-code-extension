@@ -1,0 +1,145 @@
+name: Quick Check
+
+# Fast validation that runs on every push to any branch
+# Provides quick feedback for developers working on feature branches
+
+on:
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.vscode/**'
+      - 'LICENSE'
+      - 'CHANGELOG.md'
+
+jobs:
+  quick-validate:
+    name: Quick Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Validate commit message
+        run: |
+          echo "Validating last commit message..."
+          npx commitlint --from HEAD~1 --to HEAD --verbose || {
+            echo ""
+            echo "❌ Commit message validation failed!"
+            echo ""
+            echo "Your commit message must follow Conventional Commits format:"
+            echo "  <type>(<scope>): <subject>"
+            echo ""
+            echo "Examples:"
+            echo "  feat: add new authentication method"
+            echo "  fix(auth): resolve token refresh issue"
+            echo "  docs: update installation guide"
+            echo ""
+            echo "Valid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore"
+            echo ""
+            echo "Use 'npm run commit' for interactive commit creation"
+            exit 1
+          }
+      
+      - name: Run linter
+        run: |
+          echo "Running ESLint..."
+          npm run lint || {
+            echo ""
+            echo "❌ Linting failed!"
+            echo ""
+            echo "Fix linting errors with: npm run lint:fix"
+            exit 1
+          }
+      
+      - name: Run tests
+        run: |
+          echo "Running tests..."
+          npm run test:run || {
+            echo ""
+            echo "❌ Tests failed!"
+            echo ""
+            echo "Run tests locally with: npm run test"
+            exit 1
+          }
+      
+      - name: Check formatting
+        run: |
+          echo "Checking code formatting..."
+          npm run format:check || {
+            echo ""
+            echo "❌ Code formatting check failed!"
+            echo ""
+            echo "Fix formatting with: npm run format"
+            exit 1
+          }
+      
+      - name: Validate package structure
+        run: |
+          echo "Validating package structure..."
+          npm run validate || {
+            echo ""
+            echo "❌ Package validation failed!"
+            echo ""
+            echo "Review the errors above and fix package.json or missing files"
+            exit 1
+          }
+      
+      - name: Build check
+        run: |
+          echo "Testing build..."
+          npm run compile || {
+            echo ""
+            echo "❌ Build failed!"
+            echo ""
+            echo "Fix TypeScript compilation errors"
+            exit 1
+          }
+      
+      - name: Success summary
+        if: success()
+        run: |
+          echo "### ✅ All checks passed!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Branch: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "Commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Checks completed:**" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Commit message validation" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Linting" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Tests" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Formatting" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Package validation" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Build" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Failure summary
+        if: failure()
+        run: |
+          echo "### ❌ Checks failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Branch: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "Commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Review the logs above to see which check failed." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Quick fixes:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Linting errors: \`npm run lint:fix\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Formatting errors: \`npm run format\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Test failures: \`npm run test\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit message: Use \`npm run commit\`" >> $GITHUB_STEP_SUMMARY
+

@@ -23,11 +23,4 @@ export interface IGitService {
    * @returns Promise resolving to the remote URL or undefined if not found
    */
   getRemoteUrl(startPath: string, remote?: string): Promise<string | undefined>;
-
-  /**
-   * Derives a repository slug from a remote URL
-   * @param remoteUrl - The remote URL to derive the slug from
-   * @returns The repository slug or undefined if unable to derive
-   */
-  deriveRepositorySlug(remoteUrl?: string): string | undefined;
 }

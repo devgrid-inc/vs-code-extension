@@ -35,7 +35,6 @@ describe('EntityResolver', () => {
       getRepositoryRoot: vi.fn(),
       getCurrentBranch: vi.fn(),
       getRemoteUrl: vi.fn(),
-      deriveRepositorySlug: vi.fn(),
     };
 
     entityResolver = new EntityResolver(mockGraphQLClient, mockGitService, mockLogger);
@@ -454,7 +453,6 @@ describe('EntityResolver', () => {
       });
 
       it('should load repository by slug', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const gitUrl = 'https://github.com/org/repo-001';
         const mockRepo = {
           id: 'repo-123',
@@ -480,7 +478,6 @@ describe('EntityResolver', () => {
       });
 
       it('should load repository by URL when slug not found', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const gitUrl = 'git@github.com:org/repo';
         const mockRepo = {
           id: 'repo-123',
@@ -547,7 +544,6 @@ describe('EntityResolver', () => {
       });
 
       it('should prefer repositoryId over repositorySlug when both are provided', async () => {
-        const context = { repositoryId: 'uuid-123', repositorySlug: 'repo-001' };
         const mockEntity = {
           id: 'uuid-123',
           shortId: 'repo-001',
@@ -568,7 +564,6 @@ describe('EntityResolver', () => {
       });
 
       it('should handle HTTPS URL for repository lookup', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const gitUrl = 'https://github.com/org/repo';
         const mockRepo = {
           id: 'repo-123',
@@ -592,7 +587,6 @@ describe('EntityResolver', () => {
       });
 
       it('should handle SSH URL conversion for repository lookup', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const gitUrl = 'git@github.com:org/repo';
         const mockRepo = {
           id: 'repo-123',
@@ -630,7 +624,6 @@ describe('EntityResolver', () => {
       });
 
       it('should return undefined when repository not found by slug', async () => {
-        const context = { repositorySlug: 'non-existent-slug' };
 
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
           data: { allEntities: [] },
@@ -642,7 +635,6 @@ describe('EntityResolver', () => {
       });
 
       it('should return undefined when repository not found by URL', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const gitUrl = 'https://github.com/org/non-existent';
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
@@ -675,7 +667,6 @@ describe('EntityResolver', () => {
       });
 
       it('should handle Git remote URL fetch failure', async () => {
-        const context = { repositorySlug: 'repo-001' };
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(undefined);
@@ -689,7 +680,6 @@ describe('EntityResolver', () => {
       });
 
       it('should handle null repository result from URL lookup', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const gitUrl = 'https://github.com/org/repo';
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
@@ -704,7 +694,6 @@ describe('EntityResolver', () => {
       });
 
       it('should handle empty repository array from URL lookup', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const gitUrl = 'https://github.com/org/repo';
 
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(gitUrl);
@@ -730,7 +719,6 @@ describe('EntityResolver', () => {
       });
 
       it('should handle invalid URL format', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const invalidUrl = 'not-a-valid-url';
 
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(invalidUrl);
@@ -745,7 +733,6 @@ describe('EntityResolver', () => {
       });
 
       it('should handle empty URL string', async () => {
-        const context = { repositorySlug: 'repo-001' };
 
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce('');
         vi.mocked(mockGraphQLClient.query)
@@ -757,7 +744,6 @@ describe('EntityResolver', () => {
       });
 
       it('should handle repository query returning multiple repos (edge case)', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const gitUrl = 'https://github.com/org/repo';
         const mockRepos = [
           {
@@ -1164,7 +1150,6 @@ describe('EntityResolver', () => {
         };
 
         // Use reflection or make method public for testing - for now, test via loadRepositoryDetails
-        const context = { repositorySlug: 'repo-001' };
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(url);
         vi.mocked(mockGraphQLClient.query)
@@ -1189,7 +1174,6 @@ describe('EntityResolver', () => {
           externalSystem: 'github',
         };
 
-        const context = { repositorySlug: 'repo-001' };
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(sshUrl);
         vi.mocked(mockGraphQLClient.query)
@@ -1205,7 +1189,6 @@ describe('EntityResolver', () => {
 
     describe('negative scenarios', () => {
       it('should return undefined when repository not found (empty array)', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const url = 'https://github.com/org/non-existent';
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
@@ -1220,7 +1203,6 @@ describe('EntityResolver', () => {
       });
 
       it('should return undefined when repository not found (null response)', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const url = 'https://github.com/org/repo';
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
@@ -1235,7 +1217,6 @@ describe('EntityResolver', () => {
       });
 
       it('should handle invalid URL format', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const invalidUrl = 'not-a-valid-url';
 
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(invalidUrl);
@@ -1249,7 +1230,6 @@ describe('EntityResolver', () => {
       });
 
       it('should handle empty URL string', async () => {
-        const context = { repositorySlug: 'repo-001' };
 
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce('');
         vi.mocked(mockGraphQLClient.query)
@@ -1261,7 +1241,6 @@ describe('EntityResolver', () => {
       });
 
       it('should handle null URL', async () => {
-        const context = { repositorySlug: 'repo-001' };
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(undefined);
@@ -1274,7 +1253,6 @@ describe('EntityResolver', () => {
       });
 
       it('should handle GraphQL query error', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const url = 'https://github.com/org/repo';
         const error = new Error('Network error');
 
@@ -1288,7 +1266,6 @@ describe('EntityResolver', () => {
       });
 
       it('should handle GraphQL error response', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const url = 'https://github.com/org/repo';
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
@@ -1307,7 +1284,6 @@ describe('EntityResolver', () => {
       });
 
       it('should handle malformed GraphQL response', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const url = 'https://github.com/org/repo';
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
@@ -1322,7 +1298,6 @@ describe('EntityResolver', () => {
       });
 
       it('should handle missing required fields in repository response', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const url = 'https://github.com/org/repo';
         const mockRepo = {
           id: 'repo-123',
@@ -1342,7 +1317,6 @@ describe('EntityResolver', () => {
       });
 
       it('should handle repository query returning multiple repos (limit: 1 should prevent)', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const url = 'https://github.com/org/repo';
         const mockRepos = [
           {
@@ -1417,7 +1391,6 @@ describe('EntityResolver', () => {
       });
 
       it('should fetch repository entity by shortId', async () => {
-        const context = { repositorySlug: 'repo-001' };
         const mockEntities = [{
           id: 'repo-123',
           shortId: 'repo-001',

@@ -28,7 +28,7 @@ export class DevGridClientService implements IDevGridClient {
   /**
    * Fetches comprehensive insights for the given identifiers
    */
-  async fetchInsights(identifiers: DevGridIdentifiers): Promise<DevGridInsightBundle> {
+  async fetchInsights(identifiers: DevGridIdentifiers, workspacePath?: string): Promise<DevGridInsightBundle> {
     this.logger.info('Starting insights fetch', { identifiers });
 
     try {
@@ -46,7 +46,7 @@ export class DevGridClientService implements IDevGridClient {
       }
 
       // Load repository details
-      const repositoryDetails = await this.entityResolver.loadRepositoryDetails(context, componentDetails);
+      const repositoryDetails = await this.entityResolver.loadRepositoryDetails(context, componentDetails, workspacePath);
       if (repositoryDetails) {
         bundle.repository = this.entityResolver.toRepositorySummary(repositoryDetails);
       } else {
@@ -183,7 +183,6 @@ export class DevGridClientService implements IDevGridClient {
       // Enhance with additional information
       const repositoryUrl = this.getAttributeValue(componentDetails, 'repositoryUrl') ||
         this.getAttributeValue(componentDetails, 'url');
-      const repositorySlugFromAttr = this.getAttributeValue(componentDetails, 'repositorySlug');
 
       if (repositoryUrl && !summary.url) {
         summary.url = repositoryUrl;
@@ -196,14 +195,6 @@ export class DevGridClientService implements IDevGridClient {
         if (pathParts.length >= 2) {
           summary.slug = `${pathParts[0]}/${pathParts[1]}`;
         }
-      }
-
-      if (!summary.slug && repositorySlugFromAttr) {
-        summary.slug = repositorySlugFromAttr;
-      }
-
-      if (!summary.slug && context.repositorySlug) {
-        summary.slug = context.repositorySlug;
       }
     }
 

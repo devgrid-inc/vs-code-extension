@@ -1,0 +1,178 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.vscode/**'
+      - '.github/**'
+      - '!.github/workflows/release.yml'
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        type: choice
+        options:
+          - auto
+          - patch
+          - minor
+          - major
+          - alpha
+          - beta
+          - rc
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run checks
+        run: |
+          echo "Running quality checks..."
+          npm run lint
+          npm run test:run
+          npm run format:check
+      
+      - name: Validate package
+        run: npm run validate
+      
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Determine release type
+        id: release_type
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "type=${{ inputs.release_type }}" >> $GITHUB_OUTPUT
+          else
+            echo "type=auto" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Create release (auto)
+        if: steps.release_type.outputs.type == 'auto'
+        run: |
+          # Check if there are any releasable commits since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            echo "No previous tag found, creating first release..."
+            npm run release -- --first-release
+          else
+            # Check if there are commits that would trigger a release
+            COMMITS=$(git log $LAST_TAG..HEAD --format=%s)
+            if echo "$COMMITS" | grep -qE "^(feat|fix|perf)"; then
+              echo "Found releasable commits, creating release..."
+              npm run release
+            else
+              echo "No releasable commits found (feat, fix, perf), skipping release"
+              echo "skip_release=true" >> $GITHUB_ENV
+            fi
+          fi
+      
+      - name: Create release (specific type)
+        if: steps.release_type.outputs.type != 'auto'
+        run: |
+          TYPE="${{ steps.release_type.outputs.type }}"
+          if [[ "$TYPE" =~ ^(alpha|beta|rc)$ ]]; then
+            npm run release -- --prerelease $TYPE
+          else
+            npm run release:$TYPE
+          fi
+      
+      - name: Get new version
+        if: env.skip_release != 'true'
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Build extension
+        if: env.skip_release != 'true'
+        run: npm run bundle
+      
+      - name: Package extension
+        if: env.skip_release != 'true'
+        run: npm run package
+      
+      - name: Push changes
+        if: env.skip_release != 'true'
+        run: |
+          git push --follow-tags origin main
+      
+      - name: Extract changelog for release
+        if: env.skip_release != 'true'
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          # Extract the changelog section for this version
+          awk '/^## \['$VERSION'\]/{flag=1; next} /^## \[/{flag=0} flag' CHANGELOG.md > release_notes.md
+          
+          # If release notes are empty, use a default message
+          if [ ! -s release_notes.md ]; then
+            echo "Release $VERSION" > release_notes.md
+          fi
+          
+          cat release_notes.md
+      
+      - name: Create GitHub Release
+        if: env.skip_release != 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Version ${{ steps.version.outputs.version }}
+          body_path: release_notes.md
+          files: |
+            *.vsix
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Summary
+        if: env.skip_release != 'true'
+        run: |
+          echo "### ✅ Release Created Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag**: ${{ steps.version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **VSIX**: devgrid-vscode-extension-${{ steps.version.outputs.version }}.vsix" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Next steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review the [GitHub Release](https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }})" >> $GITHUB_STEP_SUMMARY
+          echo "2. Publish to marketplace (manual or use publish workflow)" >> $GITHUB_STEP_SUMMARY
+      
+      - name: No release summary
+        if: env.skip_release == 'true'
+        run: |
+          echo "### ℹ️ No Release Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "No releasable commits found since last release." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Commits must start with \`feat:\`, \`fix:\`, or \`perf:\` to trigger a release." >> $GITHUB_STEP_SUMMARY
+

@@ -17,7 +17,7 @@
 
 ## 🚀 Quick Demo
 
-![Send to Chat Demo](auto-remediation-usinglocalbot.gif)
+![Send to Chat Demo](media/auto-remediation-usinglocalbot.gif)
 
 *Send DevGrid context to your preferred chat provider for instant guidance and remediation steps.*
 
@@ -187,6 +187,22 @@ Your data security and privacy are important to us:
 - **Open Source**: Full source code available for audit
 
 For complete details, see our [Privacy Policy](PRIVACY.md).
+
+## 📋 Versioning
+
+This project follows [Semantic Versioning](https://semver.org/) and uses [Conventional Commits](https://www.conventionalcommits.org/) for automated version management.
+
+**Version Format**: `MAJOR.MINOR.PATCH` (e.g., `1.2.3`)
+
+- **MAJOR**: Breaking changes
+- **MINOR**: New features (backward-compatible)
+- **PATCH**: Bug fixes (backward-compatible)
+
+For detailed versioning guidelines and release procedures, see [VERSIONING.md](VERSIONING.md).
+
+### Current Version: 0.0.1
+
+We're in initial development (`0.x.y`). Once we reach `1.0.0`, the API will be considered stable and strict semantic versioning will apply.
 
 ## 📄 License
 

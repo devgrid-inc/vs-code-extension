@@ -61,7 +61,6 @@ export class DevGridTreeDataProvider
       }
 
       this.logger.info("Identifiers loaded", {
-        repositorySlug: this.context.identifiers.repositorySlug ?? "(none)",
         repositoryId: this.context.identifiers.repositoryId ?? "(none)",
         componentSlug: this.context.identifiers.componentSlug ?? "(none)",
         componentId: this.context.identifiers.componentId ?? "(none)",
@@ -120,7 +119,9 @@ export class DevGridTreeDataProvider
         endpoints: this.context.config?.endpoints,
       });
 
-      this.insights = await this.client.fetchInsights(this.context.identifiers);
+      // Use repositoryRoot if available, otherwise fall back to workspace folder path
+      const workspacePath = this.context.repositoryRoot ?? this.context.workspaceFolder.uri.fsPath;
+      this.insights = await this.client.fetchInsights(this.context.identifiers, workspacePath);
       this.logger.info("Insights fetched", {
         repository: this.insights.repository?.slug ?? "-",
         component: this.insights.component?.slug ?? "-",
@@ -170,8 +171,7 @@ export class DevGridTreeDataProvider
       repositoryId:
         this.insights?.repository?.id ?? this.context?.identifiers.repositoryId,
       repositorySlug:
-        this.insights?.repository?.slug ??
-        this.context?.identifiers.repositorySlug,
+        this.insights?.repository?.slug,
       componentId:
         this.insights?.component?.id ?? this.context?.identifiers.componentId,
       componentSlug:

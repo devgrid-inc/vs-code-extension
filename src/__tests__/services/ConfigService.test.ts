@@ -42,7 +42,6 @@ describe('ConfigService', () => {
       const mockConfig = {
         apiBaseUrl: 'https://api.devgrid.io',
         identifiers: {
-          repositorySlug: 'user/repo',
           componentSlug: 'my-component',
         },
       };
@@ -130,7 +129,6 @@ describe('ConfigService', () => {
     it('should normalize identifiers from identifiers section', () => {
       const config = {
         identifiers: {
-          repositorySlug: 'user/repo',
           repositoryId: 'repo-123',
           componentSlug: 'my-component',
           componentId: 'comp-456',
@@ -142,7 +140,6 @@ describe('ConfigService', () => {
       const result = configService.normalizeIdentifiers(config);
 
       expect(result).toEqual({
-        repositorySlug: 'user/repo',
         repositoryId: 'repo-123',
         componentSlug: 'my-component',
         componentId: 'comp-456',
@@ -153,7 +150,6 @@ describe('ConfigService', () => {
 
     it('should support legacy root-level identifiers', () => {
       const config = {
-        repositorySlug: 'user/repo',
         componentSlug: 'my-component',
       } as any;
 
@@ -182,9 +178,7 @@ describe('ConfigService', () => {
     it('should prioritize identifiers section over root-level', () => {
       const config = {
         identifiers: {
-          repositorySlug: 'priority/repo',
         },
-        repositorySlug: 'fallback/repo',
       } as any;
 
       const result = configService.normalizeIdentifiers(config);
@@ -331,7 +325,6 @@ describe('ConfigService', () => {
       const mockConfig = {
         apiBaseUrl: 'https://api.devgrid.io',
         identifiers: {
-          repositorySlug: 'user/repo',
         },
         endpoints: {
           dashboardUrl: 'https://dashboard.devgrid.io',

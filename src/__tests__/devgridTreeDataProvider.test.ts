@@ -129,7 +129,6 @@ describe('DevGridTreeDataProvider', () => {
       it('should create vulnerability tree item with correct command and arguments', async () => {
         const mockContext = {
           identifiers: {
-            repositorySlug: 'test/repo',
             repositoryId: 'repo-123',
           },
           config: {},
@@ -195,7 +194,6 @@ describe('DevGridTreeDataProvider', () => {
 
       it('should handle vulnerability with undefined ID gracefully', async () => {
         const mockContext = {
-          identifiers: { repositorySlug: 'test/repo' },
           config: {},
         };
 
@@ -238,7 +236,6 @@ describe('DevGridTreeDataProvider', () => {
 
       it('should handle empty vulnerability ID string', async () => {
         const mockContext = {
-          identifiers: { repositorySlug: 'test/repo' },
           config: {},
         };
 
@@ -284,7 +281,6 @@ describe('DevGridTreeDataProvider', () => {
   describe('Tree Hierarchy', () => {
     it('should return root items when no element is provided', async () => {
       const mockContext = {
-        identifiers: { repositorySlug: 'test/repo' },
         config: {},
       };
 
@@ -338,7 +334,6 @@ describe('DevGridTreeDataProvider', () => {
 
     it('should return repository items when repository section is expanded', async () => {
       const mockContext = {
-        identifiers: { repositorySlug: 'test/repo' },
         config: {},
       };
 
@@ -376,7 +371,6 @@ describe('DevGridTreeDataProvider', () => {
 
     it('should return vulnerability children grouped by severity', async () => {
       const mockContext = {
-        identifiers: { repositorySlug: 'test/repo' },
         config: {},
       };
 
@@ -429,7 +423,6 @@ describe('DevGridTreeDataProvider', () => {
 
     it('should return incident children when incidents section is expanded', async () => {
       const mockContext = {
-        identifiers: { repositorySlug: 'test/repo' },
         config: {},
       };
 
@@ -469,7 +462,6 @@ describe('DevGridTreeDataProvider', () => {
 
     it('should return dependency children when dependencies section is expanded', async () => {
       const mockContext = {
-        identifiers: { repositorySlug: 'test/repo' },
         config: {},
       };
 
@@ -508,7 +500,6 @@ describe('DevGridTreeDataProvider', () => {
 
     it('should show empty message when no vulnerabilities exist', async () => {
       const mockContext = {
-        identifiers: { repositorySlug: 'test/repo' },
         config: {},
       };
 
@@ -545,7 +536,6 @@ describe('DevGridTreeDataProvider', () => {
       (mockAuthService.getAccessToken as any).mockResolvedValue(null);
 
       const mockContext = {
-        identifiers: { repositorySlug: 'test/repo' },
         config: {},
       };
 
@@ -568,7 +558,6 @@ describe('DevGridTreeDataProvider', () => {
 
     it('should return repository name after successful refresh', async () => {
       const mockContext = {
-        identifiers: { repositorySlug: 'test/repo' },
         config: {},
       };
 
@@ -601,7 +590,6 @@ describe('DevGridTreeDataProvider', () => {
   describe('Refresh behavior', () => {
     it('should fire onDidChangeTreeData event on refresh', async () => {
       const mockContext = {
-        identifiers: { repositorySlug: 'test/repo' },
         config: {},
       };
 
@@ -631,7 +619,6 @@ describe('DevGridTreeDataProvider', () => {
     beforeEach(() => {
       // Set up default mocks for successful refresh
       mockLoadDevGridContext.mockResolvedValue({
-        identifiers: { repositorySlug: 'test/repo' },
         config: {},
       });
       mockClient.fetchInsights.mockResolvedValue({
