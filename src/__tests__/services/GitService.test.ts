@@ -1,3 +1,5 @@
+import * as path from 'path';
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import type { ILogger } from '../../interfaces/ILogger';
@@ -67,7 +69,7 @@ describe('GitService', () => {
 
       expect(result).toBeDefined();
       // Path should be normalized
-      expect(result).toBe('/path/to/repo');
+      expect(result).toBe(path.normalize('/path/to/repo'));
     });
 
     it('should handle empty git output', async () => {

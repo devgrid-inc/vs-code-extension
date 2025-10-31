@@ -1,4 +1,5 @@
 import { promises as fs } from 'fs';
+import * as path from 'path';
 
 import yaml from 'js-yaml';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -37,12 +38,16 @@ interface MockWorkspaceFolder {
 
 describe('yamlValidator', () => {
   let mockWorkspaceFolder: MockWorkspaceFolder;
+  const getConfigPath = (fileName = 'devgrid.yml') =>
+    path.join(mockWorkspaceFolder.uri.fsPath, fileName);
 
   beforeEach(() => {
     vi.clearAllMocks();
 
+    const workspaceRoot = path.join('workspace', 'project');
+
     mockWorkspaceFolder = {
-      uri: { fsPath: '/workspace/project' },
+      uri: { fsPath: workspaceRoot },
       name: 'project',
       index: 0,
     };
@@ -52,9 +57,10 @@ describe('yamlValidator', () => {
 
   describe('findYamlConfigPath', () => {
     it('should find devgrid.yml in workspace root', async () => {
-      const configPath = '/workspace/project/devgrid.yml';
+      const configPath = path.join(mockWorkspaceFolder.uri.fsPath, 'devgrid.yml');
+      const normalizedConfigPath = path.normalize(configPath);
       (fs.access as any) = vi.fn((file: string) => {
-        if (file === configPath) {
+        if (path.normalize(file) === normalizedConfigPath) {
           return Promise.resolve();
         }
         return Promise.reject(new Error('File not found'));
@@ -62,13 +68,14 @@ describe('yamlValidator', () => {
 
       const result = await findYamlConfigPath(mockWorkspaceFolder);
 
-      expect(result).toBe(configPath);
+      expect(result).toBe(normalizedConfigPath);
     });
 
     it('should find devgrid.yaml if yml not found', async () => {
-      const yamlPath = '/workspace/project/devgrid.yaml';
+      const yamlPath = path.join(mockWorkspaceFolder.uri.fsPath, 'devgrid.yaml');
+      const normalizedYamlPath = path.normalize(yamlPath);
       (fs.access as any) = vi.fn((file: string) => {
-        if (file === yamlPath) {
+        if (path.normalize(file) === normalizedYamlPath) {
           return Promise.resolve();
         }
         return Promise.reject(new Error('File not found'));
@@ -76,7 +83,7 @@ describe('yamlValidator', () => {
 
       const result = await findYamlConfigPath(mockWorkspaceFolder);
 
-      expect(result).toBe(yamlPath);
+      expect(result).toBe(normalizedYamlPath);
     });
 
     it('should return undefined when no config file found', async () => {
@@ -96,7 +103,7 @@ describe('yamlValidator', () => {
 
   describe('validateYamlConfig', () => {
     it('should return invalid when file does not exist', async () => {
-      const configPath = '/workspace/project/devgrid.yml';
+      const configPath = getConfigPath();
       (fs.access as any) = vi.fn(() => Promise.reject(new Error('File not found')));
 
       const result = await validateYamlConfig(configPath);
@@ -107,7 +114,7 @@ describe('yamlValidator', () => {
     });
 
     it('should validate a correct YAML file', async () => {
-      const configPath = '/workspace/project/devgrid.yml';
+      const configPath = getConfigPath();
       const configContent = `project:
   appId: 12345
   components:
@@ -138,7 +145,7 @@ describe('yamlValidator', () => {
     });
 
     it('should return errors for missing project section', async () => {
-      const configPath = '/workspace/project/devgrid.yml';
+      const configPath = getConfigPath();
       const configContent = 'apiBaseUrl: https://api.devgrid.io';
 
       (fs.access as any) = vi.fn(() => Promise.resolve());
@@ -154,7 +161,7 @@ describe('yamlValidator', () => {
     });
 
     it('should return errors for empty components array', async () => {
-      const configPath = '/workspace/project/devgrid.yml';
+      const configPath = getConfigPath();
       const configContent = `project:
   appId: 12345
   components: []`;
@@ -175,7 +182,7 @@ describe('yamlValidator', () => {
     });
 
     it('should return warnings for missing optional fields', async () => {
-      const configPath = '/workspace/project/devgrid.yml';
+      const configPath = getConfigPath();
       const configContent = `project:
   components:
     - name: my-component`;
@@ -201,7 +208,7 @@ describe('yamlValidator', () => {
     });
 
     it('should handle YAML parsing errors', async () => {
-      const configPath = '/workspace/project/devgrid.yml';
+      const configPath = getConfigPath();
       const configContent = 'invalid: yaml: content: [unclosed';
 
       (fs.access as any) = vi.fn(() => Promise.resolve());
@@ -219,7 +226,8 @@ describe('yamlValidator', () => {
 
   describe('validateWorkspaceYaml', () => {
     it('should validate YAML in current workspace', async () => {
-      const configPath = '/workspace/project/devgrid.yml';
+      const configPath = getConfigPath();
+      const normalizedConfigPath = path.normalize(configPath);
       const configContent = `project:
   appId: 12345
   components:
@@ -228,7 +236,7 @@ describe('yamlValidator', () => {
       manifest: package.json`;
 
       (fs.access as any) = vi.fn((file: string) => {
-        if (file === configPath) {
+        if (path.normalize(file) === normalizedConfigPath) {
           return Promise.resolve();
         }
         return Promise.reject(new Error('File not found'));
@@ -266,9 +274,10 @@ describe('yamlValidator', () => {
 
   describe('hasValidYamlConfig', () => {
     it('should return true for valid YAML', async () => {
-      const configPath = '/workspace/project/devgrid.yml';
+      const configPath = getConfigPath();
+      const normalizedConfigPath = path.normalize(configPath);
       (fs.access as any) = vi.fn((file: string) => {
-        if (file === configPath) {
+        if (path.normalize(file) === normalizedConfigPath) {
           return Promise.resolve();
         }
         return Promise.reject(new Error('File not found'));
