@@ -2,7 +2,7 @@
   "name": "devgrid-vscode-extension",
   "displayName": "DevGrid: EngOps Insights",
   "description": "Enterprise EngOps insights for vulnerabilities, incidents, and dependencies. Seamlessly integrate DevGrid's comprehensive platform into your VS Code workflow.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "devgrid",
   "engines": {
     "vscode": "^1.85.0"

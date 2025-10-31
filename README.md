@@ -57,24 +57,39 @@ Your credentials are securely stored by VS Code and automatically refreshed.
 
 #### Workspace Configuration
 
-Create a `devgrid.yaml` file in your project root:
+Create a `devgrid.yml` file in your project root to sync with the DevGrid Platform:
 
 ```yaml
-# DevGrid Workspace Configuration
-apiBaseUrl: https://prod.api.devgrid.io
-
-# Entity Identifiers (optional - auto-detected from Git)
-repository:
-  slug: my-org/my-repo
-component:
-  id: comp_123456
-application:
-  id: app_789012
-
-# Custom Endpoints (optional)
-endpoints:
-  dashboardUrl: https://app.devgrid.io/repos/{repositoryId}
+# devgrid.yml
+project:
+  appId: abc123
+  components:
+  - name: my-cool-api
+    shortId: ab123  # Component generated short ID from DevGrid
+    api: swagger.yml  # Path to your API definition
+    manifest: package.json  # Path to application manifest (pom.xml, package.json, etc.)
+    attributes:
+      custom_id: xyz456
+      someValueSetViaEnvVariables: {{ .MY_CUSTOM_ENV_VALUE }}
+    dependencies:  # Designate component dependencies
+       - to: some-component-shortId
+         attributes:
+           custom_id: xyz456
+       - to: another-component-shortId
+    technologies:
+      - nodejs  # Technology shortId from DevGrid
+      - python 
+    relationships:
+      - type: component-has-dependency
+        to: qwe312
 ```
+
+**Getting your IDs:**
+1. Go to [DevGrid Dashboard](https://app.devgrid.io)
+2. Navigate to your Application → Components
+3. Copy the `appId` and component `shortId` values
+
+For complete documentation, see [DevGrid YAML Configuration](https://docs.devgrid.io/docs/devgrid-project-yaml).
 
 #### VS Code Settings
 
