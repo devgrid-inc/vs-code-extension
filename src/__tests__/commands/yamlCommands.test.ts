@@ -3,7 +3,6 @@ import { promises as fs } from 'fs';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
 
-
 import { openSetupGuide, createYamlTemplate } from '../../commands/yamlCommands';
 
 // Mock vscode module
@@ -126,7 +125,9 @@ describe('yamlCommands', () => {
       expect(writeCall[1]).toContain('******');
       expect(writeCall[2]).toBe('utf8');
       // File should always open after creation
-      expect(vscode.workspace.openTextDocument).toHaveBeenCalledWith('/workspace/project/devgrid.yml');
+      expect(vscode.workspace.openTextDocument).toHaveBeenCalledWith(
+        '/workspace/project/devgrid.yml'
+      );
       expect(vscode.window.showTextDocument).toHaveBeenCalledWith(mockDocument);
     });
 

@@ -174,15 +174,17 @@ describe('EntityResolver', () => {
 
       it('should load component by slug', async () => {
         const context = { componentSlug: 'comp-001' };
-        const mockEntities = [{
-          id: '123e4567-e89b-12d3-a456-426614174000',
-          shortId: 'comp-001',
-          name: 'Test Component',
-          description: 'Test Description',
-          type: 'component',
-          attributes: [],
-          relationships: [],
-        }];
+        const mockEntities = [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174000',
+            shortId: 'comp-001',
+            name: 'Test Component',
+            description: 'Test Description',
+            type: 'component',
+            attributes: [],
+            relationships: [],
+          },
+        ];
 
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
           data: { allEntities: mockEntities },
@@ -387,13 +389,15 @@ describe('EntityResolver', () => {
 
       it('should handle wrong entity type returned', async () => {
         const context = { componentSlug: 'comp-001' };
-        const mockEntities = [{
-          id: '123',
-          shortId: 'comp-001',
-          type: 'application', // Wrong type
-          attributes: [],
-          relationships: [],
-        }];
+        const mockEntities = [
+          {
+            id: '123',
+            shortId: 'comp-001',
+            type: 'application', // Wrong type
+            attributes: [],
+            relationships: [],
+          },
+        ];
 
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
           data: { allEntities: mockEntities },
@@ -425,7 +429,11 @@ describe('EntityResolver', () => {
           data: { entity: mockEntity },
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('123e4567-e89b-12d3-a456-426614174000');
@@ -448,7 +456,11 @@ describe('EntityResolver', () => {
           data: { allRepos: [mockRepo] },
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('123e4567-e89b-12d3-a456-426614174000');
@@ -474,7 +486,11 @@ describe('EntityResolver', () => {
           data: { allRepos: [mockRepo] },
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-123');
@@ -495,9 +511,15 @@ describe('EntityResolver', () => {
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(gitUrl);
-        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [mockRepo] } }); // URL lookup succeeds
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
+          data: { allRepos: [mockRepo] },
+        }); // URL lookup succeeds
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-123');
@@ -538,7 +560,11 @@ describe('EntityResolver', () => {
           .mockResolvedValueOnce({ data: { entity: null } })
           .mockResolvedValueOnce({ data: { entity: mockEntity } });
 
-        const result = await entityResolver.loadRepositoryDetails(context, componentDetails, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          componentDetails,
+          mockWorkspacePath
+        );
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-456');
@@ -560,7 +586,11 @@ describe('EntityResolver', () => {
           data: { entity: mockEntity },
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeDefined();
         expect(mockGraphQLClient.query).toHaveBeenCalledTimes(1);
@@ -580,9 +610,15 @@ describe('EntityResolver', () => {
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(gitUrl);
-        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [mockRepo] } });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
+          data: { allRepos: [mockRepo] },
+        });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-123');
@@ -602,9 +638,15 @@ describe('EntityResolver', () => {
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(gitUrl);
-        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [mockRepo] } });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
+          data: { allRepos: [mockRepo] },
+        });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-123');
@@ -619,7 +661,11 @@ describe('EntityResolver', () => {
           data: { entity: null },
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeUndefined();
       });
@@ -631,7 +677,11 @@ describe('EntityResolver', () => {
           data: { allEntities: [] },
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeUndefined();
       });
@@ -646,7 +696,11 @@ describe('EntityResolver', () => {
           .mockResolvedValueOnce({ data: { allEntities: [] } })
           .mockResolvedValueOnce({ data: { allRepos: [] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeUndefined();
       });
@@ -654,7 +708,11 @@ describe('EntityResolver', () => {
       it('should return undefined when both repositoryId and repositorySlug are missing', async () => {
         const context = {};
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeUndefined();
         expect(mockGraphQLClient.query).not.toHaveBeenCalled();
@@ -675,7 +733,11 @@ describe('EntityResolver', () => {
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(undefined);
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeUndefined();
       });
@@ -688,7 +750,11 @@ describe('EntityResolver', () => {
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(gitUrl);
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [null] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeUndefined();
       });
@@ -701,7 +767,11 @@ describe('EntityResolver', () => {
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(gitUrl);
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeUndefined();
       });
@@ -713,7 +783,11 @@ describe('EntityResolver', () => {
           data: null,
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeUndefined();
       });
@@ -726,7 +800,11 @@ describe('EntityResolver', () => {
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(invalidUrl);
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         // Should not throw, but return undefined
         expect(result).toBeUndefined();
@@ -738,7 +816,11 @@ describe('EntityResolver', () => {
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce('');
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeUndefined();
       });
@@ -763,7 +845,11 @@ describe('EntityResolver', () => {
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(gitUrl);
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: mockRepos } });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         // Should return first result
         expect(result).toBeDefined();
@@ -784,7 +870,11 @@ describe('EntityResolver', () => {
           data: { entity: mockEntity },
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-123');
@@ -814,7 +904,11 @@ describe('EntityResolver', () => {
           .mockResolvedValueOnce({ data: { entity: null } })
           .mockResolvedValueOnce({ data: { entity: null } }); // Repository not found
 
-        const result = await entityResolver.loadRepositoryDetails(context, componentDetails, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          componentDetails,
+          mockWorkspacePath
+        );
 
         expect(result).toBeUndefined();
       });
@@ -846,14 +940,16 @@ describe('EntityResolver', () => {
 
       it('should load application by ID (short ID format)', async () => {
         const context = { applicationId: 'app001' }; // No hyphen = short ID format
-        const mockEntities = [{
-          id: '123e4567-e89b-12d3-a456-426614174000',
-          shortId: 'app001',
-          name: 'Test App',
-          type: 'application',
-          attributes: [],
-          relationships: [],
-        }];
+        const mockEntities = [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174000',
+            shortId: 'app001',
+            name: 'Test App',
+            type: 'application',
+            attributes: [],
+            relationships: [],
+          },
+        ];
 
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
           data: { allEntities: mockEntities },
@@ -867,14 +963,16 @@ describe('EntityResolver', () => {
 
       it('should load application by slug', async () => {
         const context = { applicationSlug: 'app-001' };
-        const mockEntities = [{
-          id: 'app-123',
-          shortId: 'app-001',
-          name: 'Test App',
-          type: 'application',
-          attributes: [],
-          relationships: [],
-        }];
+        const mockEntities = [
+          {
+            id: 'app-123',
+            shortId: 'app-001',
+            name: 'Test App',
+            type: 'application',
+            attributes: [],
+            relationships: [],
+          },
+        ];
 
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
           data: { allEntities: mockEntities },
@@ -955,9 +1053,7 @@ describe('EntityResolver', () => {
           shortId: 'app-001',
           name: 'Test App',
           type: 'application',
-          attributes: [
-            { field: 'environment', value: 'production' },
-          ],
+          attributes: [{ field: 'environment', value: 'production' }],
           relationships: [],
         };
 
@@ -1053,13 +1149,15 @@ describe('EntityResolver', () => {
 
       it('should handle wrong entity type returned', async () => {
         const context = { applicationSlug: 'app-001' };
-        const mockEntities = [{
-          id: '123',
-          shortId: 'app-001',
-          type: 'component', // Wrong type
-          attributes: [],
-          relationships: [],
-        }];
+        const mockEntities = [
+          {
+            id: '123',
+            shortId: 'app-001',
+            type: 'component', // Wrong type
+            attributes: [],
+            relationships: [],
+          },
+        ];
 
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
           data: { allEntities: mockEntities },
@@ -1152,9 +1250,15 @@ describe('EntityResolver', () => {
         // Use reflection or make method public for testing - for now, test via loadRepositoryDetails
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(url);
-        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [mockRepo] } }); // URL lookup succeeds
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
+          data: { allRepos: [mockRepo] },
+        }); // URL lookup succeeds
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-123');
@@ -1175,9 +1279,15 @@ describe('EntityResolver', () => {
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(sshUrl);
-        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [mockRepo] } });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
+          data: { allRepos: [mockRepo] },
+        });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-123');
@@ -1193,7 +1303,11 @@ describe('EntityResolver', () => {
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(url);
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeUndefined();
       });
@@ -1206,7 +1320,11 @@ describe('EntityResolver', () => {
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(url);
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [null] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeUndefined();
       });
@@ -1219,7 +1337,11 @@ describe('EntityResolver', () => {
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(invalidUrl);
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [] } });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeUndefined();
       });
@@ -1230,7 +1352,11 @@ describe('EntityResolver', () => {
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce('');
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeUndefined();
       });
@@ -1241,7 +1367,11 @@ describe('EntityResolver', () => {
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(undefined);
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeUndefined();
       });
@@ -1255,7 +1385,9 @@ describe('EntityResolver', () => {
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(url);
         vi.mocked(mockGraphQLClient.query).mockRejectedValueOnce(error);
 
-        await expect(entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath)).rejects.toThrow(ApiError);
+        await expect(
+          entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath)
+        ).rejects.toThrow(ApiError);
       });
 
       it('should handle GraphQL error response', async () => {
@@ -1270,7 +1402,11 @@ describe('EntityResolver', () => {
         });
 
         // GraphQL errors don't throw, but return data: null
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeUndefined();
       });
@@ -1283,7 +1419,11 @@ describe('EntityResolver', () => {
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(url);
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: null });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeUndefined();
       });
@@ -1298,9 +1438,15 @@ describe('EntityResolver', () => {
 
         vi.mocked(mockGitService.getRepositoryRoot).mockResolvedValueOnce('/path/to/repo');
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(url);
-        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: [mockRepo] } });
+        vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
+          data: { allRepos: [mockRepo] },
+        });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('repo-123');
@@ -1326,7 +1472,11 @@ describe('EntityResolver', () => {
         vi.mocked(mockGitService.getRemoteUrl).mockResolvedValueOnce(url);
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({ data: { allRepos: mockRepos } });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         // Should return first result
         expect(result).toBeDefined();
@@ -1353,7 +1503,11 @@ describe('EntityResolver', () => {
           data: { allRepos: [mockRepo] },
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('uuid-123');
@@ -1361,14 +1515,16 @@ describe('EntityResolver', () => {
 
       it('should fetch application by shortId', async () => {
         const context = { applicationSlug: 'app-001' };
-        const mockEntities = [{
-          id: 'app-123',
-          shortId: 'app-001',
-          name: 'Test App',
-          type: 'application',
-          attributes: [],
-          relationships: [],
-        }];
+        const mockEntities = [
+          {
+            id: 'app-123',
+            shortId: 'app-001',
+            name: 'Test App',
+            type: 'application',
+            attributes: [],
+            relationships: [],
+          },
+        ];
 
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
           data: { allEntities: mockEntities },
@@ -1396,7 +1552,11 @@ describe('EntityResolver', () => {
           data: { allRepos: [mockRepo] },
         });
 
-        const result = await entityResolver.loadRepositoryDetails(context, undefined, mockWorkspacePath);
+        const result = await entityResolver.loadRepositoryDetails(
+          context,
+          undefined,
+          mockWorkspacePath
+        );
 
         expect(result).toBeDefined();
         expect(result?.entity.id).toBe('uuid-456');
@@ -1404,16 +1564,16 @@ describe('EntityResolver', () => {
 
       it('should handle entity with attributes', async () => {
         const context = { componentSlug: 'comp-001' };
-        const mockEntities = [{
-          id: 'comp-123',
-          shortId: 'comp-001',
-          name: 'Test Component',
-          type: 'component',
-          attributes: [
-            { field: 'language', value: 'TypeScript' },
-          ],
-          relationships: [],
-        }];
+        const mockEntities = [
+          {
+            id: 'comp-123',
+            shortId: 'comp-001',
+            name: 'Test Component',
+            type: 'component',
+            attributes: [{ field: 'language', value: 'TypeScript' }],
+            relationships: [],
+          },
+        ];
 
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
           data: { allEntities: mockEntities },
@@ -1427,23 +1587,25 @@ describe('EntityResolver', () => {
 
       it('should handle entity with relationships', async () => {
         const context = { componentSlug: 'comp-001' };
-        const mockEntities = [{
-          id: 'comp-123',
-          shortId: 'comp-001',
-          name: 'Test Component',
-          type: 'component',
-          attributes: [],
-          relationships: [
-            {
-              to: {
-                id: 'repo-123',
-                shortId: 'repo-001',
-                name: 'Test Repo',
-                type: 'repo',
+        const mockEntities = [
+          {
+            id: 'comp-123',
+            shortId: 'comp-001',
+            name: 'Test Component',
+            type: 'component',
+            attributes: [],
+            relationships: [
+              {
+                to: {
+                  id: 'repo-123',
+                  shortId: 'repo-001',
+                  name: 'Test Repo',
+                  type: 'repo',
+                },
               },
-            },
-          ],
-        }];
+            ],
+          },
+        ];
 
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
           data: { allEntities: mockEntities },
@@ -1457,14 +1619,16 @@ describe('EntityResolver', () => {
 
       it('should trim whitespace from shortId', async () => {
         const context = { componentSlug: '  comp-001  ' };
-        const mockEntities = [{
-          id: 'comp-123',
-          shortId: 'comp-001',
-          name: 'Test Component',
-          type: 'component',
-          attributes: [],
-          relationships: [],
-        }];
+        const mockEntities = [
+          {
+            id: 'comp-123',
+            shortId: 'comp-001',
+            name: 'Test Component',
+            type: 'component',
+            attributes: [],
+            relationships: [],
+          },
+        ];
 
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
           data: { allEntities: mockEntities },
@@ -1495,13 +1659,15 @@ describe('EntityResolver', () => {
 
       it('should return undefined when entity not found (wrong type returned)', async () => {
         const context = { componentSlug: 'comp-001' };
-        const mockEntities = [{
-          id: '123',
-          shortId: 'comp-001',
-          type: 'application', // Wrong type
-          attributes: [],
-          relationships: [],
-        }];
+        const mockEntities = [
+          {
+            id: '123',
+            shortId: 'comp-001',
+            type: 'application', // Wrong type
+            attributes: [],
+            relationships: [],
+          },
+        ];
 
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
           data: { allEntities: mockEntities },
@@ -1569,13 +1735,15 @@ describe('EntityResolver', () => {
 
       it('should handle missing required fields in GraphQL response', async () => {
         const context = { componentSlug: 'comp-001' };
-        const mockEntities = [{
-          id: 'comp-123',
-          // Missing shortId, name, etc.
-          type: 'component',
-          attributes: [],
-          relationships: [],
-        }];
+        const mockEntities = [
+          {
+            id: 'comp-123',
+            // Missing shortId, name, etc.
+            type: 'component',
+            attributes: [],
+            relationships: [],
+          },
+        ];
 
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
           data: { allEntities: mockEntities },
@@ -1588,7 +1756,7 @@ describe('EntityResolver', () => {
         expect(result?.entity.shortId).toBeUndefined();
       });
 
-      it('should handle multiple entities returned (shouldn\'t happen but test edge case)', async () => {
+      it("should handle multiple entities returned (shouldn't happen but test edge case)", async () => {
         const context = { componentSlug: 'comp-001' };
         const mockEntities = [
           {
@@ -1632,13 +1800,15 @@ describe('EntityResolver', () => {
 
       it('should handle invalid entity type', async () => {
         const context = { componentSlug: 'comp-001' };
-        const mockEntities = [{
-          id: 'comp-123',
-          shortId: 'comp-001',
-          type: 'invalid-type',
-          attributes: [],
-          relationships: [],
-        }];
+        const mockEntities = [
+          {
+            id: 'comp-123',
+            shortId: 'comp-001',
+            type: 'invalid-type',
+            attributes: [],
+            relationships: [],
+          },
+        ];
 
         vi.mocked(mockGraphQLClient.query).mockResolvedValueOnce({
           data: { allEntities: mockEntities },

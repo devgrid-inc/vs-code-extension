@@ -8,7 +8,6 @@ vi.mock('child_process', () => ({
   execFile: vi.fn(),
 }));
 
-
 describe('GitService', () => {
   let gitService: GitService;
   let mockLogger: ILogger;
@@ -47,7 +46,10 @@ describe('GitService', () => {
 
     it('should return undefined when git command fails', async () => {
       mockExecFile.mockImplementation((cmd, args, options, callback) => {
-        callback(new Error('Not a git repository'), { stdout: '', stderr: 'fatal: not a git repository' });
+        callback(new Error('Not a git repository'), {
+          stdout: '',
+          stderr: 'fatal: not a git repository',
+        });
       });
 
       const result = await gitService.getRepositoryRoot('/not/a/repo');
@@ -129,7 +131,11 @@ describe('GitService', () => {
   describe('getRemoteUrl', () => {
     it('should return remote URL on successful git command', async () => {
       mockExecFile.mockImplementation((cmd, args, options, callback) => {
-        callback(null, { stdout: 'origin\thttps://github.com/user/repo.git (fetch)\norigin\thttps://github.com/user/repo.git (push)', stderr: '' });
+        callback(null, {
+          stdout:
+            'origin\thttps://github.com/user/repo.git (fetch)\norigin\thttps://github.com/user/repo.git (push)',
+          stderr: '',
+        });
       });
 
       const result = await gitService.getRemoteUrl('/path/to/repo');
@@ -140,7 +146,11 @@ describe('GitService', () => {
     it('should default to origin remote', async () => {
       mockExecFile.mockImplementation((cmd, args, options, callback) => {
         expect(args).toEqual(['remote', '-v']);
-        callback(null, { stdout: 'origin\thttps://github.com/user/repo.git (fetch)\norigin\thttps://github.com/user/repo.git (push)', stderr: '' });
+        callback(null, {
+          stdout:
+            'origin\thttps://github.com/user/repo.git (fetch)\norigin\thttps://github.com/user/repo.git (push)',
+          stderr: '',
+        });
       });
 
       const result = await gitService.getRemoteUrl('/path/to/repo');
@@ -156,7 +166,11 @@ describe('GitService', () => {
 
     it('should support custom remote names', async () => {
       mockExecFile.mockImplementation((cmd, args, options, callback) => {
-        callback(null, { stdout: 'upstream\thttps://github.com/upstream/repo.git (fetch)\nupstream\thttps://github.com/upstream/repo.git (push)', stderr: '' });
+        callback(null, {
+          stdout:
+            'upstream\thttps://github.com/upstream/repo.git (fetch)\nupstream\thttps://github.com/upstream/repo.git (push)',
+          stderr: '',
+        });
       });
 
       const result = await gitService.getRemoteUrl('/path/to/repo', 'upstream');
@@ -166,7 +180,11 @@ describe('GitService', () => {
 
     it('should return undefined when remote does not exist', async () => {
       mockExecFile.mockImplementation((cmd, args, options, callback) => {
-        callback(null, { stdout: 'origin\thttps://github.com/user/repo.git (fetch)\norigin\thttps://github.com/user/repo.git (push)', stderr: '' });
+        callback(null, {
+          stdout:
+            'origin\thttps://github.com/user/repo.git (fetch)\norigin\thttps://github.com/user/repo.git (push)',
+          stderr: '',
+        });
       });
 
       const result = await gitService.getRemoteUrl('/path/to/repo', 'nonexistent');
@@ -183,7 +201,11 @@ describe('GitService', () => {
 
     it('should handle SSH URLs', async () => {
       mockExecFile.mockImplementation((cmd, args, options, callback) => {
-        callback(null, { stdout: 'origin\tgit@github.com:user/repo.git (fetch)\norigin\tgit@github.com:user/repo.git (push)', stderr: '' });
+        callback(null, {
+          stdout:
+            'origin\tgit@github.com:user/repo.git (fetch)\norigin\tgit@github.com:user/repo.git (push)',
+          stderr: '',
+        });
       });
 
       const result = await gitService.getRemoteUrl('/path/to/repo');
@@ -193,9 +215,10 @@ describe('GitService', () => {
 
     it('should handle multiple remotes and extract the correct one', async () => {
       mockExecFile.mockImplementation((cmd, args, options, callback) => {
-        callback(null, { 
-          stdout: 'origin\thttps://github.com/user/repo.git (fetch)\norigin\thttps://github.com/user/repo.git (push)\nupstream\thttps://github.com/original/repo.git (fetch)\nupstream\thttps://github.com/original/repo.git (push)', 
-          stderr: '' 
+        callback(null, {
+          stdout:
+            'origin\thttps://github.com/user/repo.git (fetch)\norigin\thttps://github.com/user/repo.git (push)\nupstream\thttps://github.com/original/repo.git (fetch)\nupstream\thttps://github.com/original/repo.git (push)',
+          stderr: '',
         });
       });
 
@@ -220,7 +243,11 @@ describe('GitService', () => {
 
     it('should extract URL correctly from git remote -v format', async () => {
       mockExecFile.mockImplementation((cmd, args, options, callback) => {
-        callback(null, { stdout: 'origin  https://github.com/user/repo.git (fetch)\norigin  https://github.com/user/repo.git (push)', stderr: '' });
+        callback(null, {
+          stdout:
+            'origin  https://github.com/user/repo.git (fetch)\norigin  https://github.com/user/repo.git (push)',
+          stderr: '',
+        });
       });
 
       const result = await gitService.getRemoteUrl('/path/to/repo');
@@ -247,7 +274,5 @@ describe('GitService', () => {
       expect(remoteResult).toBeUndefined();
       // runGit silently catches errors and returns undefined
     });
-
   });
 });
-

@@ -9,7 +9,6 @@ import type { ILogger } from '../interfaces/ILogger';
 // Note: DevGridFileConfig and DevGridProjectComponentConfig are not directly used but kept for future use
 import { convertToHttpsUrl } from '../utils/urlUtils';
 
-
 interface RepositoryInfo {
   id?: string;
   slug?: string;
@@ -298,7 +297,7 @@ project:
     if (hasDetectedData && repoInfo.components) {
       // Use detected appId from first component (they should all share the same app)
       const firstComponent = repoInfo.components[0];
-      const {appId} = firstComponent;
+      const { appId } = firstComponent;
 
       if (appId !== undefined && appId !== null) {
         const appIdStr = typeof appId === 'string' ? `"${appId}"` : String(appId);

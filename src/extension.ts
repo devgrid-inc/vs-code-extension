@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 
-
 import { DevGridAuthProvider } from './authProvider';
 import { AuthService } from './authService';
 import { registerAuthCommands } from './commands/authCommands';
@@ -382,16 +381,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             }
 
             const { createYamlTemplate } = await import('./commands/yamlCommands');
-            
+
             // Get GraphQL client and logger if authenticated
             let graphqlClient: IGraphQLClient | undefined;
             let logger: ILogger | undefined;
             if (accessToken && serviceContainer) {
               const configuration = vscode.workspace.getConfiguration('devgrid');
-              const apiBaseUrl = configuration.get<string>('apiBaseUrl', 'https://prod.api.devgrid.io');
+              const apiBaseUrl = configuration.get<string>(
+                'apiBaseUrl',
+                'https://prod.api.devgrid.io'
+              );
               serviceContainer.setApiBaseUrl(validateApiUrl(apiBaseUrl));
               serviceContainer.setAuthToken(accessToken);
-              
+
               // Get services needed to create GraphQL client
               logger = serviceContainer.getLogger();
               const httpClient = serviceContainer.getHttpClientInstance();
@@ -404,7 +406,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             }
 
             await createYamlTemplate(graphqlClient, logger);
-            
+
             // Refresh tree view after template creation
             await treeDataProvider.refresh();
             await updateDiagnostics(treeDataProvider);
@@ -454,7 +456,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             outputChannel.appendLine(`[DevGrid] Failed to pause auto-refresh: ${message}`);
-            await vscode.window.showErrorMessage(`DevGrid: Failed to pause auto-refresh: ${message}`);
+            await vscode.window.showErrorMessage(
+              `DevGrid: Failed to pause auto-refresh: ${message}`
+            );
           }
         }),
 
@@ -464,10 +468,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             autoRefreshPaused = false;
             await vscode.window.showInformationMessage('DevGrid: Auto-refresh resumed');
             outputChannel.appendLine('[DevGrid] Auto-refresh resumed by user');
-            
+
             // Restart auto-refresh
             startAutoRefresh(treeDataProvider, updateStatus, authService, outputChannel);
-            
+
             // Optionally refresh immediately
             const refreshNow = await vscode.window.showInformationMessage(
               'Would you like to refresh now?',
@@ -480,7 +484,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             outputChannel.appendLine(`[DevGrid] Failed to resume auto-refresh: ${message}`);
-            await vscode.window.showErrorMessage(`DevGrid: Failed to resume auto-refresh: ${message}`);
+            await vscode.window.showErrorMessage(
+              `DevGrid: Failed to resume auto-refresh: ${message}`
+            );
           }
         }),
 
@@ -500,13 +506,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             }
 
             const logger = serviceContainer?.getLogger();
-            logger?.info('Running Git diagnostics', { 
-              workspacePath: workspaceFolder.uri.fsPath 
+            logger?.info('Running Git diagnostics', {
+              workspacePath: workspaceFolder.uri.fsPath,
             });
 
             // Get repository information
             const repoRoot = await gitService.getRepositoryRoot(workspaceFolder.uri.fsPath);
-            const currentBranch = repoRoot ? await gitService.getCurrentBranch(repoRoot) : undefined;
+            const currentBranch = repoRoot
+              ? await gitService.getCurrentBranch(repoRoot)
+              : undefined;
             const remoteUrl = repoRoot ? await gitService.getRemoteUrl(repoRoot) : undefined;
 
             // Log detailed information
@@ -630,7 +638,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
             // Get API base URL from configuration
             const configuration = vscode.workspace.getConfiguration('devgrid');
-            const apiBaseUrl = configuration.get<string>('apiBaseUrl', 'https://prod.api.devgrid.io');
+            const apiBaseUrl = configuration.get<string>(
+              'apiBaseUrl',
+              'https://prod.api.devgrid.io'
+            );
             serviceContainer.setApiBaseUrl(validateApiUrl(apiBaseUrl));
 
             serviceContainer.setAuthToken(accessToken);
@@ -794,7 +805,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Start auto-refresh after initialization
     startAutoRefresh(treeDataProvider, updateStatus, authService, outputChannel);
 
-  const logger = serviceContainer?.getLogger();
+    const logger = serviceContainer?.getLogger();
     logger?.info('Extension activation completed successfully');
     outputChannel.appendLine('[DevGrid] Extension activation completed successfully');
   } catch (error) {
@@ -855,7 +866,7 @@ function startAutoRefresh(
       outputChannel.appendLine('[DevGrid] Auto-refresh skipped (refresh already in progress)');
       return;
     }
-    
+
     if (autoRefreshPaused) {
       outputChannel.appendLine('[DevGrid] Auto-refresh skipped (paused by user)');
       return;
@@ -916,9 +927,7 @@ async function updateStatusBar(
 /**
  * Updates diagnostics based on current vulnerabilities
  */
-async function updateDiagnostics(
-  treeDataProvider: DevGridTreeDataProvider
-): Promise<void> {
+async function updateDiagnostics(treeDataProvider: DevGridTreeDataProvider): Promise<void> {
   if (!diagnosticsService) {
     return;
   }

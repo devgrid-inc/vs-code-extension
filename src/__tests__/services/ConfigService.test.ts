@@ -113,9 +113,10 @@ describe('ConfigService', () => {
     it('should find devgrid.yml file as fallback', async () => {
       const mockConfig = { apiBaseUrl: 'https://api.devgrid.io' };
 
-      mockFs.existsSync = vi.fn()
+      mockFs.existsSync = vi
+        .fn()
         .mockReturnValueOnce(false) // devgrid.yaml doesn't exist
-        .mockReturnValueOnce(true);  // devgrid.yml exists
+        .mockReturnValueOnce(true); // devgrid.yml exists
       mockFs.readFileSync = vi.fn().mockReturnValue('yaml content');
       mockYaml.load = vi.fn().mockReturnValue(mockConfig);
 
@@ -325,8 +326,7 @@ describe('ConfigService', () => {
     it('should load complete DevGrid context', async () => {
       const mockConfig = {
         apiBaseUrl: 'https://api.devgrid.io',
-        identifiers: {
-        },
+        identifiers: {},
         endpoints: {
           dashboardUrl: 'https://dashboard.devgrid.io',
         },
@@ -386,4 +386,3 @@ describe('ConfigService', () => {
     });
   });
 });
-

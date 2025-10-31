@@ -30,7 +30,7 @@ describe('DevGridSetupPanel', () => {
       title: '',
       webview: {
         html: '',
-        onDidReceiveMessage: vi.fn((handler) => {
+        onDidReceiveMessage: vi.fn(handler => {
           messageHandlers.push(handler);
           return { dispose: vi.fn() };
         }),
@@ -115,7 +115,7 @@ describe('DevGridSetupPanel', () => {
       DevGridSetupPanel.createOrShow(undefined);
 
       const handler = messageHandlers[0];
-      
+
       // Should not throw when calling handler without onMessage
       expect(() => {
         handler({ type: 'createTemplate' });
@@ -135,7 +135,7 @@ describe('DevGridSetupPanel', () => {
     it.skip('should include YAML structure examples', () => {
       DevGridSetupPanel.createOrShow();
 
-      const {html} = mockWebviewPanel.webview;
+      const { html } = mockWebviewPanel.webview;
       expect(html).toContain('project:');
       expect(html).toContain('appId:');
       expect(html).toContain('components:');
@@ -144,7 +144,7 @@ describe('DevGridSetupPanel', () => {
     it.skip('should include action buttons', () => {
       DevGridSetupPanel.createOrShow();
 
-      const {html} = mockWebviewPanel.webview;
+      const { html } = mockWebviewPanel.webview;
       expect(html).toContain('Create Template');
       expect(html).toContain('Open Documentation');
       expect(html).toContain('Dismiss');
@@ -153,7 +153,7 @@ describe('DevGridSetupPanel', () => {
     it.skip('should include field reference table', () => {
       DevGridSetupPanel.createOrShow();
 
-      const {html} = mockWebviewPanel.webview;
+      const { html } = mockWebviewPanel.webview;
       expect(html).toContain('Field Reference');
       expect(html).toContain('project.appId');
       expect(html).toContain('project.components');
@@ -162,7 +162,7 @@ describe('DevGridSetupPanel', () => {
     it.skip('should include common patterns examples', () => {
       DevGridSetupPanel.createOrShow();
 
-      const {html} = mockWebviewPanel.webview;
+      const { html } = mockWebviewPanel.webview;
       expect(html).toContain('Single Component Project');
       expect(html).toContain('Multi-Component Project');
       expect(html).toContain('With Component Dependencies');
@@ -182,7 +182,7 @@ describe('DevGridSetupPanel', () => {
 
     it.skip('should clean up disposables on dispose', () => {
       DevGridSetupPanel.createOrShow();
-      
+
       // Access the current panel to test dispose
       if (DevGridSetupPanel.currentPanel) {
         DevGridSetupPanel.currentPanel.dispose();

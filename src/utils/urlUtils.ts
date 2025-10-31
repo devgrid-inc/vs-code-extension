@@ -35,16 +35,14 @@ export function extractRepoNameFromUrl(url: string): string | undefined {
       const match = url.match(/git@[^:]+:([^/]+\/[^/]+)(?:\.git)?$/);
       return match ? match[1] : undefined;
     }
-    
+
     // Handle HTTPS URLs: https://github.com/org/repo.git
     const urlObj = new URL(url);
-    const pathParts = urlObj.pathname
-      .split('/')
-      .filter((part) => part.length > 0);
+    const pathParts = urlObj.pathname.split('/').filter(part => part.length > 0);
     if (pathParts.length >= 2) {
       return `${pathParts[0]}/${pathParts[1]}`;
     }
-    
+
     return undefined;
   } catch {
     return undefined;
@@ -61,7 +59,7 @@ export function extractRepoNameFromUrl(url: string): string | undefined {
 export function sanitizeUrlForLogging(url: string): string {
   try {
     const urlObj = new URL(url);
-    
+
     // Mask common sensitive path segments
     const sensitivePatterns = [
       /\/token\/[^/]+/gi,
@@ -70,16 +68,16 @@ export function sanitizeUrlForLogging(url: string): string {
       /\/secret\/[^/]+/gi,
       /\/password\/[^/]+/gi,
     ];
-    
+
     let sanitizedPath = urlObj.pathname;
     for (const pattern of sensitivePatterns) {
-      sanitizedPath = sanitizedPath.replace(pattern, (match) => {
+      sanitizedPath = sanitizedPath.replace(pattern, match => {
         const parts = match.split('/');
         parts[parts.length - 1] = '***';
         return parts.join('/');
       });
     }
-    
+
     // Mask sensitive query parameters
     const sensitiveParams = ['token', 'key', 'secret', 'password', 'auth'];
     const searchParams = new URLSearchParams(urlObj.search);
@@ -88,17 +86,18 @@ export function sanitizeUrlForLogging(url: string): string {
         searchParams.set(param, '***');
       }
     }
-    
+
     const sanitizedUrl = new URL(urlObj.href);
     sanitizedUrl.pathname = sanitizedPath;
     sanitizedUrl.search = searchParams.toString();
-    
+
     return sanitizedUrl.toString();
   } catch {
     // If URL parsing fails, return a generic masked version
-    return url.replace(/\/[^/]*[Tt]oken[^/]*/gi, '/***')
-              .replace(/\/[^/]*[Kk]ey[^/]*/gi, '/***')
-              .replace(/\/[^/]*[Ss]ecret[^/]*/gi, '/***');
+    return url
+      .replace(/\/[^/]*[Tt]oken[^/]*/gi, '/***')
+      .replace(/\/[^/]*[Kk]ey[^/]*/gi, '/***')
+      .replace(/\/[^/]*[Ss]ecret[^/]*/gi, '/***');
   }
 }
 
@@ -122,12 +121,15 @@ export function isValidHttpUrl(url: string): boolean {
  * @param params - Query parameters
  * @returns The URL with query parameters
  */
-export function buildUrlWithParams(baseUrl: string, params: Record<string, string | number | boolean>): string {
+export function buildUrlWithParams(
+  baseUrl: string,
+  params: Record<string, string | number | boolean>
+): string {
   const url = new URL(baseUrl);
-  
+
   for (const [key, value] of Object.entries(params)) {
     url.searchParams.set(key, String(value));
   }
-  
+
   return url.toString();
 }

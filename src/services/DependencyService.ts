@@ -46,15 +46,15 @@ export class DependencyService {
     // Dependencies query is not available in the GraphQL schema yet
     // Return empty array until the API supports it
     this.logger.debug('Dependencies query not available in GraphQL API', { entityId });
-    
+
     const result: DevGridDependency[] = [];
-    
+
     // Cache the result
     this.cache.set(entityId, {
       data: result,
       timestamp: Date.now(),
     });
-    
+
     return result;
   }
 }

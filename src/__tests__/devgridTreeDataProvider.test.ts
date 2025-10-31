@@ -83,7 +83,7 @@ describe('DevGridTreeDataProvider', () => {
     describe('DevGridTreeItem static methods', () => {
       it.skip('should create section tree item with correct properties', () => {
         const item = DevGridTreeItem.section('Test Section', 'section:test', 'icon-test');
-        
+
         expect(item.label).toBe('Test Section');
         expect(item.contextValue).toBe('section:test');
         expect(item.collapsibleState).toBe(vscode.TreeItemCollapsibleState.Collapsed);
@@ -91,7 +91,7 @@ describe('DevGridTreeDataProvider', () => {
 
       it.skip('should create detail tree item with correct properties', () => {
         const item = DevGridTreeItem.detail('Test Detail', 'icon-detail');
-        
+
         expect(item.label).toBe('Test Detail');
         expect(item.contextValue).toBe('detail');
         expect(item.collapsibleState).toBe(vscode.TreeItemCollapsibleState.None);
@@ -99,7 +99,7 @@ describe('DevGridTreeDataProvider', () => {
 
       it.skip('should create link tree item with correct command', () => {
         const item = DevGridTreeItem.link('Test Link', 'https://example.com', 'icon-link');
-        
+
         expect(item.label).toBe('Test Link');
         expect(item.contextValue).toBe('link');
         expect(item.collapsibleState).toBe(vscode.TreeItemCollapsibleState.None);
@@ -110,7 +110,7 @@ describe('DevGridTreeDataProvider', () => {
 
       it.skip('should create empty tree item with info icon', () => {
         const item = DevGridTreeItem.empty('No data');
-        
+
         expect(item.label).toBe('No data');
         expect(item.contextValue).toBe('empty');
         expect(item.collapsibleState).toBe(vscode.TreeItemCollapsibleState.None);
@@ -118,7 +118,7 @@ describe('DevGridTreeDataProvider', () => {
 
       it.skip('should create info tree item with custom icon', () => {
         const item = DevGridTreeItem.info('Loading...', 'sync~spin');
-        
+
         expect(item.label).toBe('Loading...');
         expect(item.contextValue).toBe('info');
         expect(item.collapsibleState).toBe(vscode.TreeItemCollapsibleState.None);
@@ -160,10 +160,10 @@ describe('DevGridTreeDataProvider', () => {
 
         const rootItems = await provider.getChildren();
         expect(rootItems).toBeDefined();
-        
+
         // Find vulnerabilities section
-        const vulnSection = rootItems.find((item: DevGridTreeItem) => 
-          item.contextValue === 'section:vulnerabilities'
+        const vulnSection = rootItems.find(
+          (item: DevGridTreeItem) => item.contextValue === 'section:vulnerabilities'
         );
         expect(vulnSection).toBeDefined();
 
@@ -173,8 +173,8 @@ describe('DevGridTreeDataProvider', () => {
         expect(vulnGroups.length).toBeGreaterThan(0);
 
         // Find high severity group
-        const highGroup = vulnGroups.find((item: DevGridTreeItem) => 
-          item.contextValue === 'vulnerability-group:high'
+        const highGroup = vulnGroups.find(
+          (item: DevGridTreeItem) => item.contextValue === 'vulnerability-group:high'
         );
         expect(highGroup).toBeDefined();
 
@@ -219,12 +219,12 @@ describe('DevGridTreeDataProvider', () => {
         await provider.refresh();
 
         const rootItems = await provider.getChildren();
-        const vulnSection = rootItems.find((item: DevGridTreeItem) => 
-          item.contextValue === 'section:vulnerabilities'
+        const vulnSection = rootItems.find(
+          (item: DevGridTreeItem) => item.contextValue === 'section:vulnerabilities'
         );
         const vulnGroups = await provider.getChildren(vulnSection);
-        const mediumGroup = vulnGroups.find((item: DevGridTreeItem) => 
-          item.contextValue === 'vulnerability-group:medium'
+        const mediumGroup = vulnGroups.find(
+          (item: DevGridTreeItem) => item.contextValue === 'vulnerability-group:medium'
         );
         const vulnItems = await provider.getChildren(mediumGroup);
 
@@ -261,12 +261,12 @@ describe('DevGridTreeDataProvider', () => {
         await provider.refresh();
 
         const rootItems = await provider.getChildren();
-        const vulnSection = rootItems.find((item: DevGridTreeItem) => 
-          item.contextValue === 'section:vulnerabilities'
+        const vulnSection = rootItems.find(
+          (item: DevGridTreeItem) => item.contextValue === 'section:vulnerabilities'
         );
         const vulnGroups = await provider.getChildren(vulnSection);
-        const lowGroup = vulnGroups.find((item: DevGridTreeItem) => 
-          item.contextValue === 'vulnerability-group:low'
+        const lowGroup = vulnGroups.find(
+          (item: DevGridTreeItem) => item.contextValue === 'vulnerability-group:low'
         );
         const vulnItems = await provider.getChildren(lowGroup);
 
@@ -358,8 +358,8 @@ describe('DevGridTreeDataProvider', () => {
       await provider.refresh();
 
       const rootItems = await provider.getChildren();
-      const repoSection = rootItems.find((item: DevGridTreeItem) => 
-        item.contextValue === 'section:repository'
+      const repoSection = rootItems.find(
+        (item: DevGridTreeItem) => item.contextValue === 'section:repository'
       );
 
       const repoItems = await provider.getChildren(repoSection);
@@ -393,29 +393,29 @@ describe('DevGridTreeDataProvider', () => {
       await provider.refresh();
 
       const rootItems = await provider.getChildren();
-      const vulnSection = rootItems.find((item: DevGridTreeItem) => 
-        item.contextValue === 'section:vulnerabilities'
+      const vulnSection = rootItems.find(
+        (item: DevGridTreeItem) => item.contextValue === 'section:vulnerabilities'
       );
 
       const vulnGroups = await provider.getChildren(vulnSection);
 
       expect(vulnGroups).toBeDefined();
       expect(vulnGroups.length).toBe(3);
-      
-      const criticalGroup = vulnGroups.find((item: DevGridTreeItem) => 
-        item.contextValue === 'vulnerability-group:critical'
+
+      const criticalGroup = vulnGroups.find(
+        (item: DevGridTreeItem) => item.contextValue === 'vulnerability-group:critical'
       );
       expect(criticalGroup).toBeDefined();
       expect(criticalGroup?.label).toBe('CRITICAL (1)');
 
-      const highGroup = vulnGroups.find((item: DevGridTreeItem) => 
-        item.contextValue === 'vulnerability-group:high'
+      const highGroup = vulnGroups.find(
+        (item: DevGridTreeItem) => item.contextValue === 'vulnerability-group:high'
       );
       expect(highGroup).toBeDefined();
       expect(highGroup?.label).toBe('HIGH (1)');
 
-      const mediumGroup = vulnGroups.find((item: DevGridTreeItem) => 
-        item.contextValue === 'vulnerability-group:medium'
+      const mediumGroup = vulnGroups.find(
+        (item: DevGridTreeItem) => item.contextValue === 'vulnerability-group:medium'
       );
       expect(mediumGroup).toBeDefined();
       expect(mediumGroup?.label).toBe('MEDIUM (1)');
@@ -448,8 +448,8 @@ describe('DevGridTreeDataProvider', () => {
       await provider.refresh();
 
       const rootItems = await provider.getChildren();
-      const incidentSection = rootItems.find((item: DevGridTreeItem) => 
-        item.contextValue === 'section:incidents'
+      const incidentSection = rootItems.find(
+        (item: DevGridTreeItem) => item.contextValue === 'section:incidents'
       );
 
       const incidentItems = await provider.getChildren(incidentSection);
@@ -486,8 +486,8 @@ describe('DevGridTreeDataProvider', () => {
       await provider.refresh();
 
       const rootItems = await provider.getChildren();
-      const depSection = rootItems.find((item: DevGridTreeItem) => 
-        item.contextValue === 'section:dependencies'
+      const depSection = rootItems.find(
+        (item: DevGridTreeItem) => item.contextValue === 'section:dependencies'
       );
 
       const depItems = await provider.getChildren(depSection);
@@ -518,8 +518,8 @@ describe('DevGridTreeDataProvider', () => {
       await provider.refresh();
 
       const rootItems = await provider.getChildren();
-      const vulnSection = rootItems.find((item: DevGridTreeItem) => 
-        item.contextValue === 'section:vulnerabilities'
+      const vulnSection = rootItems.find(
+        (item: DevGridTreeItem) => item.contextValue === 'section:vulnerabilities'
       );
 
       const vulnItems = await provider.getChildren(vulnSection);
@@ -723,7 +723,7 @@ describe('DevGridTreeDataProvider', () => {
 
       // Should not throw, just log error and continue
       await expect(provider.refresh()).resolves.not.toThrow();
-      
+
       // Should still show warning since validation failed
       expect(vscode.window.showWarningMessage).toHaveBeenCalled();
     });

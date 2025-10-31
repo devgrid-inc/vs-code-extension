@@ -22,9 +22,9 @@ export class GitService implements IGitService {
       const output = await this.runGit(['rev-parse', '--show-toplevel'], startPath);
       return output ? path.normalize(output) : undefined;
     } catch (error) {
-      this.logger.debug('Failed to get repository root', { 
-        startPath, 
-        error: error instanceof Error ? error.message : String(error) 
+      this.logger.debug('Failed to get repository root', {
+        startPath,
+        error: error instanceof Error ? error.message : String(error),
       });
       return undefined;
     }
@@ -37,9 +37,9 @@ export class GitService implements IGitService {
     try {
       return await this.runGit(['rev-parse', '--abbrev-ref', 'HEAD'], startPath);
     } catch (error) {
-      this.logger.debug('Failed to get current branch', { 
-        startPath, 
-        error: error instanceof Error ? error.message : String(error) 
+      this.logger.debug('Failed to get current branch', {
+        startPath,
+        error: error instanceof Error ? error.message : String(error),
       });
       return undefined;
     }
@@ -74,17 +74,17 @@ export class GitService implements IGitService {
         }
       }
 
-      this.logger.debug('Remote not found in git remote -v output', { 
-        startPath, 
+      this.logger.debug('Remote not found in git remote -v output', {
+        startPath,
         remote,
-        output 
+        output,
       });
       return undefined;
     } catch (error) {
-      this.logger.debug('Failed to get remote URL', { 
-        startPath, 
-        remote, 
-        error: error instanceof Error ? error.message : String(error) 
+      this.logger.debug('Failed to get remote URL', {
+        startPath,
+        remote,
+        error: error instanceof Error ? error.message : String(error),
       });
       return undefined;
     }

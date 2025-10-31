@@ -28,7 +28,10 @@ export class DevGridClientService implements IDevGridClient {
   /**
    * Fetches comprehensive insights for the given identifiers
    */
-  async fetchInsights(identifiers: DevGridIdentifiers, workspacePath?: string): Promise<DevGridInsightBundle> {
+  async fetchInsights(
+    identifiers: DevGridIdentifiers,
+    workspacePath?: string
+  ): Promise<DevGridInsightBundle> {
     this.logger.info('Starting insights fetch', { identifiers });
 
     try {
@@ -46,7 +49,11 @@ export class DevGridClientService implements IDevGridClient {
       }
 
       // Load repository details
-      const repositoryDetails = await this.entityResolver.loadRepositoryDetails(context, componentDetails, workspacePath);
+      const repositoryDetails = await this.entityResolver.loadRepositoryDetails(
+        context,
+        componentDetails,
+        workspacePath
+      );
       if (repositoryDetails) {
         bundle.repository = this.entityResolver.toRepositorySummary(repositoryDetails);
       } else {
@@ -74,7 +81,10 @@ export class DevGridClientService implements IDevGridClient {
       }
 
       // Load application details
-      const applicationDetails = await this.entityResolver.loadApplicationDetails(context, componentDetails);
+      const applicationDetails = await this.entityResolver.loadApplicationDetails(
+        context,
+        componentDetails
+      );
       if (applicationDetails) {
         bundle.application = this.entityResolver.toApplicationSummary(applicationDetails);
       } else {
@@ -95,7 +105,10 @@ export class DevGridClientService implements IDevGridClient {
       // Fetch incidents
       const incidentEntityId = context.componentId || context.repositoryId;
       if (incidentEntityId) {
-        bundle.incidents = (await this.incidentService.fetchIncidents(incidentEntityId)).slice(0, 20);
+        bundle.incidents = (await this.incidentService.fetchIncidents(incidentEntityId)).slice(
+          0,
+          20
+        );
       }
 
       // Fetch dependencies

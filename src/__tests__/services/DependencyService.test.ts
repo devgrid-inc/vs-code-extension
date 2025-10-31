@@ -82,7 +82,9 @@ describe('DependencyService', () => {
         url: 'https://npmjs.com/package/axios',
       });
 
-      expect(mockLogger.debug).toHaveBeenCalledWith('Fetching dependencies', { entityId: 'entity-123' });
+      expect(mockLogger.debug).toHaveBeenCalledWith('Fetching dependencies', {
+        entityId: 'entity-123',
+      });
       expect(mockLogger.debug).toHaveBeenCalledWith('Fetched dependencies', {
         entityId: 'entity-123',
         count: 2,
@@ -175,13 +177,13 @@ describe('DependencyService', () => {
       (mockGraphQLClient.query as any).mockRejectedValue(graphqlError);
 
       await expect(dependencyService.fetchDependencies('entity-123')).rejects.toThrow(ApiError);
-      await expect(dependencyService.fetchDependencies('entity-123')).rejects.toThrow('Failed to fetch dependencies');
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        'Failed to fetch dependencies',
-        graphqlError,
-        { entityId: 'entity-123' }
+      await expect(dependencyService.fetchDependencies('entity-123')).rejects.toThrow(
+        'Failed to fetch dependencies'
       );
+
+      expect(mockLogger.error).toHaveBeenCalledWith('Failed to fetch dependencies', graphqlError, {
+        entityId: 'entity-123',
+      });
     });
 
     it.skip('should pass correct query and variables to GraphQL client', async () => {
@@ -221,13 +223,10 @@ describe('DependencyService', () => {
 
       await customDependencyService.fetchDependencies('entity-789');
 
-      expect(mockGraphQLClient.query).toHaveBeenCalledWith(
-        expect.any(String),
-        {
-          entityId: 'entity-789',
-          limit: 10,
-        }
-      );
+      expect(mockGraphQLClient.query).toHaveBeenCalledWith(expect.any(String), {
+        entityId: 'entity-789',
+        limit: 10,
+      });
     });
 
     it.skip('should handle null values in optional fields', async () => {
@@ -341,4 +340,3 @@ describe('DependencyService', () => {
     });
   });
 });
-

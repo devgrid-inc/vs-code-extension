@@ -13,8 +13,8 @@ import { findYamlConfigPath } from '../utils/yamlValidator';
  */
 export async function openSetupGuide(): Promise<void> {
   const { DevGridSetupPanel } = await import('../webviews/DevGridSetupPanel');
-  
-  DevGridSetupPanel.createOrShow((message) => {
+
+  DevGridSetupPanel.createOrShow(message => {
     if (message.type === 'createTemplate') {
       void createYamlTemplate();
     }
@@ -64,7 +64,7 @@ export async function createYamlTemplate(
   // Generate template
   try {
     let templateContent: string;
-    
+
     if (graphqlClient && logger) {
       // Use smart template generation with API
       const templateService = new YamlTemplateService(graphqlClient, logger);
@@ -105,8 +105,7 @@ project:
     const doc = await vscode.workspace.openTextDocument(configPath);
     await vscode.window.showTextDocument(doc);
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : 'Failed to create template';
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create template';
     await vscode.window.showErrorMessage(
       `DevGrid: Failed to create configuration file: ${errorMessage}`
     );
@@ -124,4 +123,3 @@ async function getRepositoryRoot(workspacePath: string): Promise<string | undefi
     return undefined;
   }
 }
-

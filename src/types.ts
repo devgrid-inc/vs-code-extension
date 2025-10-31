@@ -171,7 +171,7 @@ export interface DevGridInsightBundle {
 }
 
 export interface DevGridTreeItemData {
-  kind: "section" | "entity" | "detail" | "empty" | "info";
+  kind: 'section' | 'entity' | 'detail' | 'empty' | 'info';
   label: string;
   description?: string;
   tooltip?: string;

@@ -85,7 +85,9 @@ describe('IncidentService', () => {
         url: undefined,
       });
 
-      expect(mockLogger.debug).toHaveBeenCalledWith('Fetching incidents', { entityId: 'entity-123' });
+      expect(mockLogger.debug).toHaveBeenCalledWith('Fetching incidents', {
+        entityId: 'entity-123',
+      });
       expect(mockLogger.debug).toHaveBeenCalledWith('Fetched incidents', {
         entityId: 'entity-123',
         count: 2,
@@ -182,13 +184,13 @@ describe('IncidentService', () => {
       (mockGraphQLClient.query as any).mockRejectedValue(graphqlError);
 
       await expect(incidentService.fetchIncidents('entity-123')).rejects.toThrow(ApiError);
-      await expect(incidentService.fetchIncidents('entity-123')).rejects.toThrow('Failed to fetch incidents');
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        'Failed to fetch incidents',
-        graphqlError,
-        { entityId: 'entity-123' }
+      await expect(incidentService.fetchIncidents('entity-123')).rejects.toThrow(
+        'Failed to fetch incidents'
       );
+
+      expect(mockLogger.error).toHaveBeenCalledWith('Failed to fetch incidents', graphqlError, {
+        entityId: 'entity-123',
+      });
     });
 
     it('should pass correct query and variables to GraphQL client', async () => {
@@ -228,13 +230,10 @@ describe('IncidentService', () => {
 
       await customIncidentService.fetchIncidents('entity-789');
 
-      expect(mockGraphQLClient.query).toHaveBeenCalledWith(
-        expect.any(String),
-        {
-          entityId: 'entity-789',
-          limit: 5,
-        }
-      );
+      expect(mockGraphQLClient.query).toHaveBeenCalledWith(expect.any(String), {
+        entityId: 'entity-789',
+        limit: 5,
+      });
     });
 
     it('should handle null values in optional fields', async () => {
@@ -277,12 +276,9 @@ describe('IncidentService', () => {
 
       await expect(incidentService.fetchIncidents('entity-123')).rejects.toThrow(ApiError);
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        'Failed to fetch incidents',
-        'String error',
-        { entityId: 'entity-123' }
-      );
+      expect(mockLogger.error).toHaveBeenCalledWith('Failed to fetch incidents', 'String error', {
+        entityId: 'entity-123',
+      });
     });
   });
 });
-

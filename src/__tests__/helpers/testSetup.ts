@@ -5,7 +5,10 @@ import { vi, afterEach } from 'vitest';
 vi.mock('vscode', () => ({
   TreeItem: class {
     // eslint-disable-next-line no-useless-constructor -- Mock class for testing
-    constructor(public label: string, public collapsibleState?: unknown) {}
+    constructor(
+      public label: string,
+      public collapsibleState?: unknown
+    ) {}
   },
   TreeItemCollapsibleState: {
     None: 0,
@@ -18,10 +21,10 @@ vi.mock('vscode', () => ({
   },
   EventEmitter: class {
     private listeners: Array<(data?: any) => void> = [];
-    
+
     // eslint-disable-next-line no-useless-constructor -- Mock class for testing
     constructor() {}
-    
+
     get event() {
       return (listener: (data?: any) => void) => {
         this.listeners.push(listener);
@@ -35,7 +38,7 @@ vi.mock('vscode', () => ({
         };
       };
     }
-    
+
     fire(data?: any): void {
       this.listeners.forEach(listener => listener(data));
     }
@@ -48,10 +51,12 @@ vi.mock('vscode', () => ({
     One: 1,
   },
   workspace: {
-    workspaceFolders: [{
-      uri: { fsPath: '/test/workspace' },
-      name: 'test-workspace',
-    }],
+    workspaceFolders: [
+      {
+        uri: { fsPath: '/test/workspace' },
+        name: 'test-workspace',
+      },
+    ],
     getConfiguration: vi.fn(),
   },
   window: {

@@ -38,7 +38,9 @@ export class DiagnosticsService {
 
     // Filter out closed/resolved vulnerabilities
     const activeVulnerabilities = vulnerabilities.filter(
-      (vuln) => !vuln.status || (vuln.status.toLowerCase() !== 'closed' && vuln.status.toLowerCase() !== 'resolved')
+      vuln =>
+        !vuln.status ||
+        (vuln.status.toLowerCase() !== 'closed' && vuln.status.toLowerCase() !== 'resolved')
     );
 
     if (activeVulnerabilities.length === 0) {
@@ -50,7 +52,7 @@ export class DiagnosticsService {
     const diagnosticsByFile = new Map<string, vscode.Diagnostic[]>();
 
     // Fetch details for each vulnerability to get location and scanType
-    const diagnosticsPromises = activeVulnerabilities.map(async (vuln) => {
+    const diagnosticsPromises = activeVulnerabilities.map(async vuln => {
       try {
         const details = await this.vulnerabilityService.fetchVulnerabilityDetails(vuln.id);
         if (!details) {
@@ -138,7 +140,7 @@ export class DiagnosticsService {
       });
 
       fileUri = await this.resolveFileUri(parsedLocation.filePath);
-      
+
       if (fileUri) {
         this.logger.debug('Resolved file URI', {
           vulnerabilityId: vulnerability.id,
@@ -156,7 +158,7 @@ export class DiagnosticsService {
     // and try to map it to appropriate manifest file or workspace root
     if (!fileUri) {
       const hasPackageData = this.hasPackageData(details.location);
-      
+
       if (hasPackageData) {
         // Use hybrid detection: try packageIdentifier first, then workspace scan
         fileUri = await this.resolvePackageManifest(details.location);
@@ -176,17 +178,21 @@ export class DiagnosticsService {
         // No location and not a package vulnerability
         // For medium/high/critical severity, still show at workspace root
         const severity = details.severity?.toLowerCase() ?? '';
-        const isHighSeverity = severity === 'critical' || severity === 'high' || severity === 'medium';
-        
+        const isHighSeverity =
+          severity === 'critical' || severity === 'high' || severity === 'medium';
+
         if (isHighSeverity) {
           fileUri = await this.resolveWorkspaceRoot();
-          
+
           if (fileUri) {
-            this.logger.debug('Mapped high-severity vulnerability without location to workspace root', {
-              vulnerabilityId: vulnerability.id,
-              severity,
-              fileUri,
-            });
+            this.logger.debug(
+              'Mapped high-severity vulnerability without location to workspace root',
+              {
+                vulnerabilityId: vulnerability.id,
+                severity,
+                fileUri,
+              }
+            );
           } else {
             this.logger.debug('Could not resolve workspace root for high-severity vulnerability', {
               vulnerabilityId: vulnerability.id,
@@ -209,7 +215,12 @@ export class DiagnosticsService {
 
     // Create diagnostic using parsed location if available, otherwise use default (line 0)
     const locationForDiagnostic = parsedLocation || { filePath: '', line: 0, column: 0 };
-    const diagnostic = this.createDiagnostic(vulnerability, details, locationForDiagnostic, isConfigurationIssue);
+    const diagnostic = this.createDiagnostic(
+      vulnerability,
+      details,
+      locationForDiagnostic,
+      isConfigurationIssue
+    );
 
     return [[fileUri, diagnostic]];
   }
@@ -221,7 +232,7 @@ export class DiagnosticsService {
     // Check scanType for configuration-related keywords
     const scanType = details.scanType?.toLowerCase() ?? '';
     const configKeywords = ['config', 'configuration', 'infra', 'infrastructure', 'compliance'];
-    
+
     for (const keyword of configKeywords) {
       if (scanType.includes(keyword)) {
         return true;
@@ -231,7 +242,7 @@ export class DiagnosticsService {
     // Check originatingSystem for configuration scanners
     const originatingSystem = details.originatingSystem?.toLowerCase() ?? '';
     const configSystems = ['checkov', 'tfsec', 'terrascan', 'kics', 'config', 'compliance'];
-    
+
     for (const system of configSystems) {
       if (originatingSystem.includes(system)) {
         return true;
@@ -259,12 +270,12 @@ export class DiagnosticsService {
     // If it's an object, try to extract file path and line/column
     if (typeof location === 'object' && location !== null) {
       const loc = location as Record<string, unknown>;
-      
+
       // Check for nested nodes array structure (e.g., Checkmarx SAST format)
       if (Array.isArray(loc.nodes) && loc.nodes.length > 0) {
         const firstNode = loc.nodes[0] as Record<string, unknown> | null;
         if (firstNode && typeof firstNode === 'object') {
-          const fileName = 
+          const fileName =
             (typeof firstNode.fileName === 'string' ? firstNode.fileName : null) ||
             (typeof firstNode.file === 'string' ? firstNode.file : null) ||
             (typeof firstNode.path === 'string' ? firstNode.path : null);
@@ -283,7 +294,7 @@ export class DiagnosticsService {
           }
         }
       }
-      
+
       // Try direct location object structures
       const filePath =
         (typeof loc.fileName === 'string' ? loc.fileName : null) ||
@@ -294,18 +305,24 @@ export class DiagnosticsService {
       if (filePath) {
         // Remove leading /app/ or similar container paths
         const normalizedPath = filePath.replace(/^\/app\//, '').replace(/^\//, '');
-        
+
         const line =
-          typeof loc.line === 'number' ? loc.line :
-          typeof loc.lineNumber === 'number' ? loc.lineNumber :
-          typeof loc.startLine === 'number' ? loc.startLine :
-          undefined;
+          typeof loc.line === 'number'
+            ? loc.line
+            : typeof loc.lineNumber === 'number'
+              ? loc.lineNumber
+              : typeof loc.startLine === 'number'
+                ? loc.startLine
+                : undefined;
 
         const column =
-          typeof loc.column === 'number' ? loc.column :
-          typeof loc.columnNumber === 'number' ? loc.columnNumber :
-          typeof loc.startColumn === 'number' ? loc.startColumn :
-          undefined;
+          typeof loc.column === 'number'
+            ? loc.column
+            : typeof loc.columnNumber === 'number'
+              ? loc.columnNumber
+              : typeof loc.startColumn === 'number'
+                ? loc.startColumn
+                : undefined;
 
         return {
           filePath: normalizedPath,
@@ -365,11 +382,11 @@ export class DiagnosticsService {
     try {
       // Extract just the filename
       const fileName = filePath.split('/').pop() || filePath;
-      
+
       // Search for files matching the name
       const pattern = new vscode.RelativePattern(workspaceFolder, `**/${fileName}`);
       const files = await vscode.workspace.findFiles(pattern, null, 1);
-      
+
       if (files.length > 0) {
         return files[0];
       }
@@ -472,7 +489,7 @@ export class DiagnosticsService {
     }
 
     const folder = vscode.workspace.workspaceFolders[0];
-    
+
     // List of common manifest files in order of likelihood
     const commonManifests = [
       'package.json', // npm/yarn/pnpm
@@ -541,22 +558,25 @@ export class DiagnosticsService {
   private async resolvePackageManifest(location: string | unknown): Promise<string | null> {
     // Try to detect package manager from packageIdentifier
     const packageManager = this.detectPackageManagerFromIdentifier(location);
-    
+
     if (packageManager) {
       this.logger.debug('Detected package manager from identifier', { packageManager });
       const manifestFiles = this.getManifestFilesForPackageManager(packageManager);
-      
+
       // Try each manifest file in priority order
       for (const manifestFile of manifestFiles) {
         // Handle glob patterns (e.g., *.csproj)
         if (manifestFile.includes('*')) {
-          if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
+          if (
+            !vscode.workspace.workspaceFolders ||
+            vscode.workspace.workspaceFolders.length === 0
+          ) {
             continue;
           }
-          
+
           const folder = vscode.workspace.workspaceFolders[0];
           const pattern = new vscode.RelativePattern(folder, manifestFile);
-          
+
           try {
             const files = await vscode.workspace.findFiles(pattern, null, 1);
             if (files.length > 0) {
@@ -586,7 +606,7 @@ export class DiagnosticsService {
           }
         }
       }
-      
+
       this.logger.debug('Package manager detected but no manifest file found', {
         packageManager,
         triedFiles: manifestFiles,
@@ -611,7 +631,9 @@ export class DiagnosticsService {
   private async resolveWorkspaceRoot(): Promise<string | null> {
     // Use virtual document URI instead of searching for real files
     // This prevents diagnostics from being randomly attached to README.md or other root files
-    return vscode.Uri.parse('devgrid:DevGrid Tracked Vulnerability - Ambigious Location').toString();
+    return vscode.Uri.parse(
+      'devgrid:DevGrid Tracked Vulnerability - Ambigious Location'
+    ).toString();
   }
 
   /**
@@ -626,7 +648,7 @@ export class DiagnosticsService {
     // Build diagnostic message
     const prefix = isConfigurationIssue ? '[Config] ' : '';
     const message = `${prefix}${vulnerability.title}`;
-    
+
     // Create range
     const range = this.createRange(location);
 
@@ -634,10 +656,10 @@ export class DiagnosticsService {
     const severity = this.mapSeverity(details.severity);
 
     const diagnostic = new vscode.Diagnostic(range, message, severity);
-    
+
     // Add source identifier
     diagnostic.source = 'DevGrid';
-    
+
     // Add code (vulnerability ID) for tracking
     diagnostic.code = vulnerability.id;
 
@@ -655,7 +677,7 @@ export class DiagnosticsService {
   private createRange(location: ParsedLocation): vscode.Range {
     const line = location.line ?? 0;
     const startColumn = location.column ?? 0;
-    
+
     // If we have line/column info, create a range for that position
     // Otherwise, create a range for the entire first line
     if (location.line !== undefined || location.column !== undefined) {
@@ -675,7 +697,7 @@ export class DiagnosticsService {
     }
 
     const severityLower = severity.toLowerCase();
-    
+
     switch (severityLower) {
       case 'critical':
       case 'high':
@@ -707,4 +729,3 @@ export class DiagnosticsService {
     this.logger.debug('Diagnostics service disposed');
   }
 }
-

@@ -195,9 +195,9 @@ describe('yamlValidator', () => {
       const result = await validateYamlConfig(configPath);
 
       expect(result.warnings.length).toBeGreaterThan(0);
-      expect(result.warnings.some((w) => w.includes('appId'))).toBe(true);
-      expect(result.warnings.some((w) => w.includes('shortId'))).toBe(true);
-      expect(result.warnings.some((w) => w.includes('manifest'))).toBe(true);
+      expect(result.warnings.some(w => w.includes('appId'))).toBe(true);
+      expect(result.warnings.some(w => w.includes('shortId'))).toBe(true);
+      expect(result.warnings.some(w => w.includes('manifest'))).toBe(true);
     });
 
     it('should handle YAML parsing errors', async () => {
@@ -213,7 +213,7 @@ describe('yamlValidator', () => {
       const result = await validateYamlConfig(configPath);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors.some((e) => e.includes('Failed to parse YAML'))).toBe(true);
+      expect(result.errors.some(e => e.includes('Failed to parse YAML'))).toBe(true);
     });
   });
 
@@ -246,7 +246,6 @@ describe('yamlValidator', () => {
           ],
         },
       }));
-
 
       const result = await validateWorkspaceYaml();
 
@@ -282,7 +281,6 @@ describe('yamlValidator', () => {
         },
       }));
 
-
       const result = await hasValidYamlConfig();
 
       expect(result).toBe(true);
@@ -291,11 +289,9 @@ describe('yamlValidator', () => {
     it('should return false when no YAML file exists', async () => {
       (fs.access as any) = vi.fn(() => Promise.reject(new Error('File not found')));
 
-
       const result = await hasValidYamlConfig();
 
       expect(result).toBe(false);
     });
   });
 });
-

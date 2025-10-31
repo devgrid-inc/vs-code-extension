@@ -81,7 +81,8 @@ export class LoggerService implements ILogger {
 
     const timestamp = new Date().toISOString();
     const levelName = LogLevel[level];
-    const contextStr = Object.keys(this.context).length > 0 ? ` ${JSON.stringify(this.context)}` : '';
+    const contextStr =
+      Object.keys(this.context).length > 0 ? ` ${JSON.stringify(this.context)}` : '';
     const dataStr = data ? ` ${JSON.stringify(data)}` : '';
 
     const logMessage = `[${timestamp}] [${levelName}]${contextStr} ${message}${dataStr}`;

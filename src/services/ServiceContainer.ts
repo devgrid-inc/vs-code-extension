@@ -18,7 +18,6 @@ import { IncidentService } from './IncidentService';
 import { LoggerService } from './LoggerService';
 import { VulnerabilityService } from './VulnerabilityService';
 
-
 /**
  * Service container for dependency injection
  */
@@ -128,7 +127,11 @@ export class ServiceContainer {
     const graphqlClient = this.getGraphQLClient(options.apiBaseUrl, httpClient, logger);
     const gitService = this.getGitService();
     const entityResolver = this.getEntityResolver(graphqlClient, gitService, logger);
-    const vulnerabilityService = this.getVulnerabilityServiceForClient(graphqlClient, logger, options.maxItems);
+    const vulnerabilityService = this.getVulnerabilityServiceForClient(
+      graphqlClient,
+      logger,
+      options.maxItems
+    );
     const incidentService = this.getIncidentService(graphqlClient, logger, options.maxItems);
     const dependencyService = this.getDependencyService(graphqlClient, logger, options.maxItems);
 
@@ -229,8 +232,9 @@ export class ServiceContainer {
     logger: ILogger,
     maxItems: number
   ): VulnerabilityService {
-    return this.get(`vulnerabilityService:${maxItems}`, () =>
-      new VulnerabilityService(graphqlClient, logger, maxItems)
+    return this.get(
+      `vulnerabilityService:${maxItems}`,
+      () => new VulnerabilityService(graphqlClient, logger, maxItems)
     );
   }
 
@@ -242,8 +246,9 @@ export class ServiceContainer {
     logger: ILogger,
     maxItems: number
   ): IncidentService {
-    return this.get(`incidentService:${maxItems}`, () => 
-      new IncidentService(graphqlClient, logger, maxItems)
+    return this.get(
+      `incidentService:${maxItems}`,
+      () => new IncidentService(graphqlClient, logger, maxItems)
     );
   }
 
@@ -255,8 +260,9 @@ export class ServiceContainer {
     logger: ILogger,
     maxItems: number
   ): DependencyService {
-    return this.get(`dependencyService:${maxItems}`, () => 
-      new DependencyService(graphqlClient, logger, maxItems)
+    return this.get(
+      `dependencyService:${maxItems}`,
+      () => new DependencyService(graphqlClient, logger, maxItems)
     );
   }
 
@@ -268,8 +274,9 @@ export class ServiceContainer {
     const httpClient = this.getHttpClient();
     // Use the configured API URL
     const graphqlClient = this.getGraphQLClient(this.apiBaseUrl, httpClient, logger);
-    return this.get('vulnerabilityService:100', () =>
-      new VulnerabilityService(graphqlClient, logger, 100)
+    return this.get(
+      'vulnerabilityService:100',
+      () => new VulnerabilityService(graphqlClient, logger, 100)
     );
   }
 

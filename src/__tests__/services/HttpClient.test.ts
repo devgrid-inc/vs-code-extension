@@ -143,10 +143,7 @@ describe('HttpClient', () => {
       await vi.runAllTimersAsync();
       await promise;
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.example.com/users',
-        expect.any(Object)
-      );
+      expect(mockFetch).toHaveBeenCalledWith('https://api.example.com/users', expect.any(Object));
     });
 
     it('should remove trailing slash from base URL', async () => {
@@ -165,10 +162,7 @@ describe('HttpClient', () => {
       await vi.runAllTimersAsync();
       await promise;
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.example.com/users',
-        expect.any(Object)
-      );
+      expect(mockFetch).toHaveBeenCalledWith('https://api.example.com/users', expect.any(Object));
     });
 
     it('should use absolute URLs as-is', async () => {
@@ -241,7 +235,7 @@ describe('HttpClient', () => {
         expect.any(String),
         expect.objectContaining({
           headers: expect.objectContaining({
-            'Authorization': 'Bearer test-token-123',
+            Authorization: 'Bearer test-token-123',
           }),
         })
       );
@@ -295,10 +289,10 @@ describe('HttpClient', () => {
       });
 
       const promise = httpClient.get('https://api.example.com/test');
-      
+
       // Fast-forward through retry delays
       await vi.runAllTimersAsync();
-      
+
       const result = await promise;
 
       expect(result.status).toBe(200);
@@ -310,9 +304,9 @@ describe('HttpClient', () => {
       mockFetch.mockRejectedValue(new Error('Network error'));
 
       const promise = httpClient.get('https://api.example.com/test').catch(err => err);
-      
+
       await vi.runAllTimersAsync();
-      
+
       const result = await promise;
       expect(result).toBeInstanceOf(Error);
       expect(result.message).toBe('Network error');
@@ -323,12 +317,14 @@ describe('HttpClient', () => {
     it('should respect custom retry count', async () => {
       mockFetch.mockRejectedValue(new Error('Network error'));
 
-      const promise = httpClient.get('https://api.example.com/test', {
-        retries: 1,
-      }).catch(err => err);
-      
+      const promise = httpClient
+        .get('https://api.example.com/test', {
+          retries: 1,
+        })
+        .catch(err => err);
+
       await vi.runAllTimersAsync();
-      
+
       const result = await promise;
       expect(result).toBeInstanceOf(Error);
       expect(result.message).toBe('Network error');
@@ -354,9 +350,9 @@ describe('HttpClient', () => {
       const promise = httpClient.get('https://api.example.com/test', {
         retryDelay: 500,
       });
-      
+
       await vi.runAllTimersAsync();
-      
+
       const result = await promise;
       expect(result.status).toBe(200);
     });
@@ -454,4 +450,3 @@ describe('HttpClient', () => {
     });
   });
 });
-

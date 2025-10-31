@@ -1,4 +1,8 @@
-import type { IGraphQLClient, GraphQLResponse, GraphQLQueryOptions } from '../interfaces/IGraphQLClient';
+import type {
+  IGraphQLClient,
+  GraphQLResponse,
+  GraphQLQueryOptions,
+} from '../interfaces/IGraphQLClient';
 import type { IHttpClient } from '../interfaces/IHttpClient';
 import type { ILogger } from '../interfaces/ILogger';
 
