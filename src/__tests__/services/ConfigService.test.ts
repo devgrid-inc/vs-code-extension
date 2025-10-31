@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as fs from 'fs';
-import * as yaml from 'js-yaml';
 
-import { ConfigurationError, ValidationError } from '../../errors/DevGridError';
+import * as yaml from 'js-yaml';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+import { ConfigurationError } from '../../errors/DevGridError';
 import type { ILogger } from '../../interfaces/ILogger';
 import { ConfigService } from '../../services/ConfigService';
 

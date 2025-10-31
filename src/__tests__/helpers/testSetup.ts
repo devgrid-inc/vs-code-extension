@@ -19,6 +19,7 @@ vi.mock('vscode', () => ({
   EventEmitter: class {
     private listeners: Array<(data?: any) => void> = [];
     
+    // eslint-disable-next-line no-useless-constructor -- Mock class for testing
     constructor() {}
     
     get event() {

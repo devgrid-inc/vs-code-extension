@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import type { ILogger } from '../../interfaces/ILogger';
-import { DevGridClientService } from '../../services/DevGridClientService';
 import type { DependencyService } from '../../services/DependencyService';
+import { DevGridClientService } from '../../services/DevGridClientService';
 import type { EntityResolver } from '../../services/EntityResolver';
 import type { IncidentService } from '../../services/IncidentService';
 import type { VulnerabilityService } from '../../services/VulnerabilityService';

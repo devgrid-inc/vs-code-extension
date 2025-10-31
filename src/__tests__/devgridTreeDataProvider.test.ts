@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as vscode from 'vscode';
 
 import type { AuthService } from '../authService';
+import * as devgridConfig from '../devgridConfig';
 import { DevGridTreeDataProvider, DevGridTreeItem } from '../devgridTreeDataProvider';
 import type { ServiceContainer } from '../services/ServiceContainer';
-import type { DevGridInsightBundle, DevGridVulnerability, DevGridIncident, DevGridDependency } from '../types';
-import * as devgridConfig from '../devgridConfig';
+import type { DevGridInsightBundle } from '../types';
 
 // Mock devgridConfig module
 vi.mock('../devgridConfig', () => ({
@@ -21,7 +21,6 @@ describe('DevGridTreeDataProvider', () => {
   let mockLoadDevGridContext: any;
 
   beforeEach(() => {
-    // Create mock logger
     mockLogger = {
       trace: vi.fn(),
       debug: vi.fn(),

@@ -6,10 +6,6 @@ import { HttpClient } from '../../services/HttpClient';
 // Mock global fetch
 global.fetch = vi.fn();
 
-// Mock global setTimeout and clearTimeout for testing
-const originalSetTimeout = global.setTimeout;
-const originalClearTimeout = global.clearTimeout;
-
 describe('HttpClient', () => {
   let httpClient: HttpClient;
   let mockLogger: ILogger;
@@ -313,11 +309,13 @@ describe('HttpClient', () => {
     it('should throw error after max retries', async () => {
       mockFetch.mockRejectedValue(new Error('Network error'));
 
-      const promise = httpClient.get('https://api.example.com/test');
+      const promise = httpClient.get('https://api.example.com/test').catch(err => err);
       
       await vi.runAllTimersAsync();
       
-      await expect(promise).rejects.toThrow('Network error');
+      const result = await promise;
+      expect(result).toBeInstanceOf(Error);
+      expect(result.message).toBe('Network error');
       expect(mockFetch).toHaveBeenCalledTimes(4); // 1 initial + 3 retries
       expect(mockLogger.error).toHaveBeenCalled();
     });
@@ -327,11 +325,13 @@ describe('HttpClient', () => {
 
       const promise = httpClient.get('https://api.example.com/test', {
         retries: 1,
-      });
+      }).catch(err => err);
       
       await vi.runAllTimersAsync();
       
-      await expect(promise).rejects.toThrow('Network error');
+      const result = await promise;
+      expect(result).toBeInstanceOf(Error);
+      expect(result.message).toBe('Network error');
       expect(mockFetch).toHaveBeenCalledTimes(2); // 1 initial + 1 retry
     });
 
@@ -378,10 +378,12 @@ describe('HttpClient', () => {
     it('should handle fetch errors', async () => {
       mockFetch.mockRejectedValue(new Error('Fetch failed'));
 
-      const promise = httpClient.get('https://api.example.com/test');
+      const promise = httpClient.get('https://api.example.com/test').catch(err => err);
       await vi.runAllTimersAsync();
 
-      await expect(promise).rejects.toThrow('Fetch failed');
+      const result = await promise;
+      expect(result).toBeInstanceOf(Error);
+      expect(result.message).toBe('Fetch failed');
       expect(mockLogger.error).toHaveBeenCalled();
     });
 
@@ -395,10 +397,12 @@ describe('HttpClient', () => {
 
       mockFetch.mockResolvedValue(mockResponse);
 
-      const promise = httpClient.get('https://api.example.com/test');
+      const promise = httpClient.get('https://api.example.com/test').catch(err => err);
       await vi.runAllTimersAsync();
 
-      await expect(promise).rejects.toThrow('Invalid JSON');
+      const result = await promise;
+      expect(result).toBeInstanceOf(Error);
+      expect(result.message).toBe('Invalid JSON');
     });
   });
 
