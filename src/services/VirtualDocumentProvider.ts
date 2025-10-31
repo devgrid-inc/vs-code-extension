@@ -11,7 +11,7 @@ export class VirtualDocumentProvider implements vscode.TextDocumentContentProvid
    */
   provideTextDocumentContent(uri: vscode.Uri): string {
     // For the ambiguous location document, provide a simple explanation
-    if (uri.path === 'DevGrid Tracked Vulnerability - Ambigious Location') {
+    if (uri.path === 'DevGrid Tracked Vulnerability - Ambiguous Location') {
       return `DevGrid: Vulnerabilities with Unknown Location
 
 This virtual document contains diagnostics for vulnerabilities that could not be mapped to a specific file location.

@@ -268,7 +268,7 @@ export class DiagnosticsService {
     }
 
     // If it's an object, try to extract file path and line/column
-    if (typeof location === 'object' && location !== null) {
+    if (typeof location === 'object' && location != null) {
       const loc = location as Record<string, unknown>;
 
       // Check for nested nodes array structure (e.g., Checkmarx SAST format)
@@ -404,7 +404,7 @@ export class DiagnosticsService {
    * Checks if location has package data (indicating a package-level vulnerability)
    */
   private hasPackageData(location: string | unknown): boolean {
-    if (!location || typeof location !== 'object' || location === null) {
+    if (typeof location !== 'object' || location == null) {
       return false;
     }
 
@@ -421,7 +421,7 @@ export class DiagnosticsService {
    * Examples: "Npm-canvg-3.0.10" -> "npm", "PyPI-requests-2.28.0" -> "python"
    */
   private detectPackageManagerFromIdentifier(location: string | unknown): string | null {
-    if (!location || typeof location !== 'object' || location === null) {
+    if (typeof location !== 'object' || location == null) {
       return null;
     }
 
@@ -632,7 +632,7 @@ export class DiagnosticsService {
     // Use virtual document URI instead of searching for real files
     // This prevents diagnostics from being randomly attached to README.md or other root files
     return vscode.Uri.parse(
-      'devgrid:DevGrid Tracked Vulnerability - Ambigious Location'
+      'devgrid:DevGrid Tracked Vulnerability - Ambiguous Location'
     ).toString();
   }
 
