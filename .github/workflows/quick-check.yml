@@ -89,16 +89,7 @@ jobs:
             exit 1
           }
       
-      - name: Validate package structure
-        run: |
-          echo "Validating package structure..."
-          npm run validate || {
-            echo ""
-            echo "❌ Package validation failed!"
-            echo ""
-            echo "Review the errors above and fix package.json or missing files"
-            exit 1
-          }
+  
       
       - name: Build check
         run: |
@@ -108,6 +99,17 @@ jobs:
             echo "❌ Build failed!"
             echo ""
             echo "Fix TypeScript compilation errors"
+            exit 1
+          }
+
+      - name: Validate package structure
+        run: |
+          echo "Validating package structure..."
+          npm run validate || {
+            echo ""
+            echo "❌ Package validation failed!"
+            echo ""
+            echo "Review the errors above and fix package.json or missing files"
             exit 1
           }
       
