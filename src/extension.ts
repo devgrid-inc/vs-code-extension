@@ -4,8 +4,8 @@ import * as vscode from 'vscode';
 import { DevGridAuthProvider } from './authProvider';
 import { AuthService } from './authService';
 import { registerAuthCommands } from './commands/authCommands';
-import { DevGridTreeDataProvider } from './devgridTreeDataProvider';
-import type { IGitService } from './interfaces/IGitService';
+import { DevGridTreeDataProvider, type DevGridTreeItem } from './devgridTreeDataProvider';
+import type { IGraphQLClient } from './interfaces/IGraphQLClient';
 import type { ILogger } from './interfaces/ILogger';
 import { DiagnosticsService } from './services/DiagnosticsService';
 import { ServiceContainer } from './services/ServiceContainer';
@@ -198,7 +198,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }
 
     // Create tree view
-    let treeView: vscode.TreeView<any>;
+    let treeView: vscode.TreeView<DevGridTreeItem>;
     try {
       treeView = vscode.window.createTreeView('devgridInsights', {
         treeDataProvider,
@@ -384,8 +384,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             const { createYamlTemplate } = await import('./commands/yamlCommands');
             
             // Get GraphQL client and logger if authenticated
-            let graphqlClient;
-            let logger;
+            let graphqlClient: IGraphQLClient | undefined;
+            let logger: ILogger | undefined;
             if (accessToken && serviceContainer) {
               const configuration = vscode.workspace.getConfiguration('devgrid');
               const apiBaseUrl = configuration.get<string>('apiBaseUrl', 'https://prod.api.devgrid.io');
@@ -394,7 +394,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
               
               // Get services needed to create GraphQL client
               logger = serviceContainer.getLogger();
-              const httpClient = serviceContainer.get('httpClient') as import('./interfaces/IHttpClient').IHttpClient | undefined;
+              const httpClient = serviceContainer.getHttpClientInstance();
               if (httpClient && logger) {
                 const { GraphQLClient } = await import('./services/GraphQLClient');
                 graphqlClient = new GraphQLClient(httpClient, logger);
@@ -419,30 +419,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         // Clear Cache command
         vscode.commands.registerCommand('devgrid.clearCache', async () => {
           try {
-            const logger = serviceContainer?.get('logger') as ILogger | undefined;
+            const logger = serviceContainer?.getLogger();
             logger?.info('Clearing all caches');
 
             // Get the client and clear caches from all services
-            const client = treeDataProvider.getClient();
-            if (client) {
-              // Clear vulnerability cache
-              const vulnService = (client as any).vulnerabilityService;
-              if (vulnService && typeof vulnService.clearCache === 'function') {
-                vulnService.clearCache();
-              }
-
-              // Clear incident cache
-              const {incidentService} = (client as any);
-              if (incidentService && typeof incidentService.clearCache === 'function') {
-                incidentService.clearCache();
-              }
-
-              // Clear dependency cache
-              const {dependencyService} = (client as any);
-              if (dependencyService && typeof dependencyService.clearCache === 'function') {
-                dependencyService.clearCache();
-              }
-            }
+            treeDataProvider.getClient()?.clearCaches();
 
             await vscode.window.showInformationMessage('DevGrid: Cache cleared successfully');
             logger?.info('All caches cleared successfully');
@@ -512,13 +493,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
               return;
             }
 
-            const gitService = serviceContainer?.get('gitService') as IGitService | undefined;
+            const gitService = serviceContainer?.getGitService();
             if (!gitService) {
               await vscode.window.showErrorMessage('DevGrid: Git service not available');
               return;
             }
 
-            const logger = serviceContainer?.get('logger') as ILogger | undefined;
+            const logger = serviceContainer?.getLogger();
             logger?.info('Running Git diagnostics', { 
               workspacePath: workspaceFolder.uri.fsPath 
             });
@@ -567,8 +548,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           }
         }),
 
-        vscode.commands.registerCommand('devgrid.openVulnerability', async (...args: any[]) => {
-          const logger = serviceContainer?.get('logger') as ILogger | undefined;
+        vscode.commands.registerCommand('devgrid.openVulnerability', async (...args: unknown[]) => {
+          const logger = serviceContainer?.getLogger();
           logger?.debug('Command handler called', { args });
 
           const extractVulnerabilityId = (arg: unknown): string | undefined => {
@@ -655,7 +636,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             serviceContainer.setAuthToken(accessToken);
 
             const vulnerabilityService = serviceContainer.getVulnerabilityService();
-            const logger = serviceContainer.get('logger') as ILogger;
+            const logger = serviceContainer.getLogger();
 
             // Message handler for webview actions
             const handleWebviewMessage = async (message: unknown) => {
@@ -813,7 +794,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Start auto-refresh after initialization
     startAutoRefresh(treeDataProvider, updateStatus, authService, outputChannel);
 
-    const logger = serviceContainer?.get('logger') as ILogger | undefined;
+  const logger = serviceContainer?.getLogger();
     logger?.info('Extension activation completed successfully');
     outputChannel.appendLine('[DevGrid] Extension activation completed successfully');
   } catch (error) {
@@ -950,7 +931,7 @@ async function updateDiagnostics(
       diagnosticsService.clear();
     }
   } catch (error) {
-    const logger = serviceContainer?.get('logger') as ILogger | undefined;
+    const logger = serviceContainer?.getLogger();
     logger?.warn('Failed to update diagnostics', {
       error: error instanceof Error ? error.message : String(error),
     });

@@ -62,15 +62,27 @@ export class ConfigService implements IConfigLoader {
   ): DevGridIdentifiers {
     const identifiers: DevGridIdentifiers = {};
 
+    const normalizeString = (value: unknown): string | undefined => {
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        return trimmed.length > 0 ? trimmed : undefined;
+      }
+      if (typeof value === 'number') {
+        return String(value);
+      }
+      return undefined;
+    };
+
     // Helper function to set value if not already set
-    const setIfEmpty = (key: keyof DevGridIdentifiers, value: string | undefined) => {
-      if (value && !identifiers[key]) {
-        identifiers[key] = value;
+    const setIfEmpty = (key: keyof DevGridIdentifiers, value: unknown) => {
+      const normalized = normalizeString(value);
+      if (normalized && !identifiers[key]) {
+        identifiers[key] = normalized;
       }
     };
 
     // Helper function to get value with fallback
-    const fallback = (getter: (cfg: DevGridFileConfig) => string | undefined) => {
+    const fallback = (getter: (cfg: DevGridFileConfig) => unknown) => {
       try {
         return getter(config);
       } catch {
@@ -88,24 +100,32 @@ export class ConfigService implements IConfigLoader {
     }
 
     // Load from root level (legacy support)
-    setIfEmpty('repositoryId', fallback(cfg => cfg.repositoryId as string));
-    setIfEmpty('componentSlug', fallback(cfg => cfg.componentSlug as string));
-    setIfEmpty('componentId', fallback(cfg => cfg.componentId as string));
-    setIfEmpty('applicationSlug', fallback(cfg => cfg.applicationSlug as string));
-    setIfEmpty('applicationId', fallback(cfg => cfg.applicationId as string));
+    setIfEmpty('repositoryId', fallback(cfg => cfg.repositoryId));
+    setIfEmpty('componentSlug', fallback(cfg => cfg.componentSlug));
+    setIfEmpty('componentId', fallback(cfg => cfg.componentId));
+    setIfEmpty('applicationSlug', fallback(cfg => cfg.applicationSlug));
+    setIfEmpty('applicationId', fallback(cfg => cfg.applicationId));
+
+    setIfEmpty('repositoryId', fallback(cfg => cfg['repository_id']));
+    setIfEmpty('componentSlug', fallback(cfg => cfg['component_slug']));
+    setIfEmpty('componentId', fallback(cfg => cfg['component_id']));
+    setIfEmpty('applicationSlug', fallback(cfg => cfg['application_slug']));
+    setIfEmpty('applicationId', fallback(cfg => cfg['application_id']));
 
     // Load from nested objects
-    setIfEmpty('componentSlug', fallback(cfg => (cfg.component as any)?.slug));
-    setIfEmpty('componentId', fallback(cfg => (cfg.component as any)?.id));
-    setIfEmpty('applicationSlug', fallback(cfg => (cfg.application as any)?.slug));
-    setIfEmpty('applicationId', fallback(cfg => (cfg.application as any)?.id));
+    setIfEmpty('componentSlug', config.component?.slug);
+    setIfEmpty('componentId', config.component?.id);
+    const { application } = config;
+    if (application) {
+      setIfEmpty('applicationSlug', application.slug);
+      setIfEmpty('applicationId', application.id);
+    }
 
     // Handle project.appId (numeric values)
     const appId = config.project?.appId;
     if (appId !== undefined) {
-      const appIdString = typeof appId === 'string' ? appId : String(appId);
-      outputChannel?.appendLine(`[DevGrid:config] Found project.appId=${appId} (converted to string: ${appIdString})`);
-      setIfEmpty('applicationId', appIdString);
+      outputChannel?.appendLine(`[DevGrid:config] Found project.appId=${appId}`);
+      setIfEmpty('applicationId', appId);
     }
 
     // Handle project.components selection

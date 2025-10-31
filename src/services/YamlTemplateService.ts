@@ -1,3 +1,4 @@
+import { existsSync } from 'fs';
 import * as path from 'path';
 
 import * as vscode from 'vscode';
@@ -67,6 +68,7 @@ interface ApplicationResponse {
  * Service for generating DevGrid YAML templates
  */
 export class YamlTemplateService {
+  // eslint-disable-next-line no-useless-constructor -- TypeScript parameter properties for dependency injection
   constructor(
     private graphqlClient: IGraphQLClient,
     private logger: ILogger
@@ -131,6 +133,14 @@ export class YamlTemplateService {
 
     try {
       // Use same pattern as EntityResolver - API accepts url filter even if not in schema
+      const variables: Record<string, unknown> = {
+        filter: {
+          url: {
+            query: normalizedUrl,
+          },
+        },
+      };
+
       const data = await this.graphqlClient.query<AllReposResponse>(
         `
           query FindRepositoryByUrl($filter: RepoFilter) {
@@ -146,13 +156,7 @@ export class YamlTemplateService {
             }
           }
         `,
-        {
-          filter: {
-            url: {
-              query: normalizedUrl,
-            },
-          } as any, // EntityResolver uses this pattern, API accepts it
-        }
+        variables
       );
 
       const repos = data.data?.allRepos ?? [];
@@ -377,11 +381,10 @@ project:
    * Detects which manifest file exists in the project root
    */
   private detectManifestFile(projectRoot: string, candidates: string[]): string | undefined {
-    const fs = require('fs');
     for (const candidate of candidates) {
       const fullPath = path.join(projectRoot, candidate);
       try {
-        if (fs.existsSync(fullPath)) {
+        if (existsSync(fullPath)) {
           return candidate;
         }
       } catch {

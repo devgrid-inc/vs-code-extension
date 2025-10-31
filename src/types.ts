@@ -49,6 +49,17 @@ export interface DevGridFileConfig {
   endpoints?: DevGridEndpointTemplates;
   project?: DevGridProjectConfig;
   metadata?: Record<string, unknown>;
+  repositoryId?: string | number;
+  componentSlug?: string;
+  componentId?: string | number;
+  applicationSlug?: string;
+  applicationId?: string | number;
+  component?: DevGridProjectComponentConfig;
+  application?: {
+    id?: string | number;
+    slug?: string;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 }
 

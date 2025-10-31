@@ -4,7 +4,7 @@ import type { DevGridIdentifiers, DevGridInsightBundle, DevGridEntitySummary } f
 import { renderTemplate } from '../utils/templateUtils';
 
 import type { DependencyService } from './DependencyService';
-import type { EntityResolver } from './EntityResolver';
+import type { EntityResolver, GraphEntityDetails } from './EntityResolver';
 import type { IncidentService } from './IncidentService';
 import type { VulnerabilityService } from './VulnerabilityService';
 
@@ -50,7 +50,7 @@ export class DevGridClientService implements IDevGridClient {
       if (repositoryDetails) {
         bundle.repository = this.entityResolver.toRepositorySummary(repositoryDetails);
       } else {
-        const repository = this.buildRepositorySummary(componentDetails, context);
+        const repository = this.buildRepositorySummary(componentDetails);
         if (repository) {
           bundle.repository = repository;
         }
@@ -142,12 +142,17 @@ export class DevGridClientService implements IDevGridClient {
     this.dashboardUrl = url;
   }
 
+  clearCaches(): void {
+    this.vulnerabilityService.clearCache();
+    this.incidentService.clearCache();
+    this.dependencyService.clearCache();
+  }
+
   /**
    * Builds repository summary from component details
    */
   private buildRepositorySummary(
-    componentDetails: any,
-    context: DevGridIdentifiers
+    componentDetails: GraphEntityDetails | undefined
   ): DevGridEntitySummary | undefined {
     if (!componentDetails) {
       return undefined;
@@ -181,7 +186,8 @@ export class DevGridClientService implements IDevGridClient {
 
     if (summary) {
       // Enhance with additional information
-      const repositoryUrl = this.getAttributeValue(componentDetails, 'repositoryUrl') ||
+      const repositoryUrl =
+        this.getAttributeValue(componentDetails, 'repositoryUrl') ??
         this.getAttributeValue(componentDetails, 'url');
 
       if (repositoryUrl && !summary.url) {
@@ -205,7 +211,7 @@ export class DevGridClientService implements IDevGridClient {
    * Builds application summary from component details
    */
   private buildApplicationSummary(
-    componentDetails: any,
+    componentDetails: GraphEntityDetails | undefined,
     context: DevGridIdentifiers
   ): DevGridEntitySummary | undefined {
     if (!componentDetails) {
@@ -257,16 +263,15 @@ export class DevGridClientService implements IDevGridClient {
   /**
    * Gets attribute value from component details
    */
-  private getAttributeValue(componentDetails: any, key: string): string | undefined {
-    if (!componentDetails?.attributes) {
-      return undefined;
+  private getAttributeValue(componentDetails: GraphEntityDetails, key: string): string | undefined {
+    const value = componentDetails.attributes.get(key);
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
     }
-
-    const value = componentDetails.attributes.get?.(key);
-    if (typeof value === 'string' && value.trim().length > 0) {
-      return value.trim();
+    if (typeof value === 'number') {
+      return value.toString();
     }
-
     return undefined;
   }
 

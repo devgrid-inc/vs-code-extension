@@ -407,7 +407,7 @@ class DeviceFlowError extends Error {
   }
 }
 
-function decodeIdToken(idToken?: string): Record<string, any> | undefined {
+function decodeIdToken(idToken?: string): Record<string, unknown> | undefined {
   if (!idToken) {
     return undefined;
   }
@@ -422,7 +422,11 @@ function decodeIdToken(idToken?: string): Record<string, any> | undefined {
     const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
     const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
     const decoded = Buffer.from(padded, "base64").toString("utf8");
-    return JSON.parse(decoded);
+    const parsed = JSON.parse(decoded) as unknown;
+    if (parsed && typeof parsed === "object") {
+      return parsed as Record<string, unknown>;
+    }
+    return undefined;
   } catch {
     return undefined;
   }

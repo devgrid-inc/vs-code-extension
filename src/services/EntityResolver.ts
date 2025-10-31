@@ -28,7 +28,7 @@ interface GraphEntity {
   } | null> | null;
 }
 
-interface GraphEntityDetails {
+export interface GraphEntityDetails {
   entity: {
     id?: string | null;
     shortId?: string | null;

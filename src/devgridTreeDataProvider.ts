@@ -158,6 +158,10 @@ export class DevGridTreeDataProvider
     return "DevGrid: Ready";
   }
 
+  getClient(): IDevGridClient | undefined {
+    return this.client;
+  }
+
   getDashboardUrl(): string | undefined {
     const urlTemplate =
       this.context?.config?.endpoints?.dashboardUrl ||
@@ -453,6 +457,8 @@ export class DevGridTreeDataProvider
 }
 
 export class DevGridTreeItem extends vscode.TreeItem {
+  public vulnerabilityId?: string;
+
   static section(
     label: string,
     contextValue: string,
@@ -543,7 +549,7 @@ function createVulnerabilityItem(
     "vulnerability"
   );
   item.id = vulnerability.id;
-  (item as any).vulnerabilityId = vulnerability.id;
+  item.vulnerabilityId = vulnerability.id;
   item.description = descriptionParts.join(" • ");
   item.tooltip = buildTooltip([
     `Severity: ${vulnerability.severity}`,

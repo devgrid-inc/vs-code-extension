@@ -4,10 +4,7 @@ import * as path from "path";
 import yaml from "js-yaml";
 import * as vscode from "vscode";
 
-import {
-  getRemoteUrl,
-  getRepositoryRoot,
-} from "./gitUtils";
+import { getRepositoryRoot } from "./gitUtils";
 import type {
   DevGridFileConfig,
   DevGridIdentifiers,
@@ -179,9 +176,15 @@ async function normalizeIdentifiers(
     }
   }
 
-  const fallback = (getter: (cfg: any) => unknown): string | undefined => {
+  const fallback = <Value>(
+    getter: (cfg: DevGridFileConfig) => Value
+  ): string | undefined => {
     try {
-      return safeString(getter(config));
+      const value = getter(config);
+      if (typeof value === "number") {
+        return value.toString();
+      }
+      return safeString(value);
     } catch {
       return undefined;
     }
@@ -204,10 +207,10 @@ async function normalizeIdentifiers(
   setIfEmpty("applicationSlug", fallback((cfg) => cfg.application_slug));
   setIfEmpty("applicationSlug", fallback((cfg) => cfg.application?.slug));
 
-  const {project} = config;
+  const { project } = config;
   if (project) {
     // Handle both string and numeric appId values
-    const {appId} = project;
+    const { appId } = project;
     if (appId !== undefined) {
       const appIdString = typeof appId === "string" ? appId : String(appId);
       options.outputChannel?.appendLine(`[DevGrid:config] Found project.appId=${appId} (converted to string: ${appIdString})`);
@@ -215,23 +218,22 @@ async function normalizeIdentifiers(
     }
     setIfEmpty(
       "applicationSlug",
-      safeString((project as Record<string, unknown>)?.appSlug as string)
+      safeString(project.appSlug)
     );
 
     const component = await selectComponent(project.components, options);
     if (component) {
-      const attributes =
-        (component.attributes as Record<string, unknown> | undefined) ?? {};
+      const attributes = component.attributes ?? {};
       const shortId = safeString(component.shortId);
       if (shortId) {
         setIfEmpty("componentSlug", shortId);
       }
-      setIfEmpty("componentSlug", safeString(attributes.slug as string));
+      setIfEmpty("componentSlug", safeString(attributes["slug"]));
       setIfEmpty("componentSlug", safeString(component.name));
 
-      setIfEmpty("componentId", safeString(attributes.id as string));
-      setIfEmpty("componentId", safeString(attributes.custom_id as string));
-      setIfEmpty("componentId", safeString(attributes.component_id as string));
+      setIfEmpty("componentId", safeString(attributes["id"]));
+      setIfEmpty("componentId", safeString(attributes["custom_id"]));
+      setIfEmpty("componentId", safeString(attributes["component_id"]));
 
     }
   }
@@ -272,7 +274,7 @@ async function selectComponent(
     let manifestExists = false;
     let apiExists = false;
 
-    const manifest = safeString(component?.manifest as string);
+    const manifest = safeString(component?.manifest);
     if (manifest) {
       const absolute = path.resolve(configDir, manifest);
       if (await pathExists(absolute)) {
@@ -281,7 +283,7 @@ async function selectComponent(
       }
     }
 
-    const api = safeString(component?.api as string);
+    const api = safeString(component?.api);
     if (api) {
       const absolute = path.resolve(configDir, api);
       if (await pathExists(absolute)) {
@@ -295,7 +297,7 @@ async function selectComponent(
     if (attributes?.default === true) {
       score += 3;
     }
-    if (safeString(attributes?.custom_id as string)) {
+    if (safeString(attributes["custom_id"])) {
       score += 1;
     }
 
@@ -327,6 +329,9 @@ function componentLabel(component: DevGridProjectComponentConfig): string {
 function safeString(value: unknown): string | undefined {
   if (typeof value === "string" && value.trim().length > 0) {
     return value.trim();
+  }
+  if (typeof value === "number") {
+    return value.toString();
   }
   return undefined;
 }

@@ -23,7 +23,7 @@ import { VulnerabilityService } from './VulnerabilityService';
  * Service container for dependency injection
  */
 export class ServiceContainer {
-  private services = new Map<string, any>();
+  private services = new Map<string, unknown>();
   private apiBaseUrl: string = 'https://prod.api.devgrid.io'; // Default fallback
   private authToken: string | undefined;
   private logLevel: LogLevel = LogLevel.INFO;
@@ -109,7 +109,7 @@ export class ServiceContainer {
       }
       this.services.set(key, factory());
     }
-    return this.services.get(key);
+    return this.services.get(key) as T;
   }
 
   /**
@@ -160,6 +160,10 @@ export class ServiceContainer {
     });
   }
 
+  getHttpClientInstance(): IHttpClient {
+    return this.getHttpClient();
+  }
+
   /**
    * Gets the HTTP client
    */
@@ -199,7 +203,7 @@ export class ServiceContainer {
   /**
    * Gets the Git service
    */
-  private getGitService(): IGitService {
+  getGitService(): IGitService {
     return this.get('gitService', () => {
       const logger = this.getLogger();
       return new GitService(logger);

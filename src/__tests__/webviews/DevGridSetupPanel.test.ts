@@ -181,7 +181,7 @@ describe('DevGridSetupPanel', () => {
     });
 
     it.skip('should clean up disposables on dispose', () => {
-      const panel = DevGridSetupPanel.createOrShow();
+      DevGridSetupPanel.createOrShow();
       
       // Access the current panel to test dispose
       if (DevGridSetupPanel.currentPanel) {
@@ -191,4 +191,3 @@ describe('DevGridSetupPanel', () => {
     });
   });
 });
-

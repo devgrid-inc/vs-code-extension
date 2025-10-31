@@ -26,4 +26,9 @@ export interface IDevGridClient {
    * @returns Dashboard URL or undefined if not available
    */
   getDashboardUrl(): string | undefined;
+
+  /**
+   * Clears cached data for the underlying services
+   */
+  clearCaches(): void;
 }

@@ -124,7 +124,7 @@ export class HttpClient implements IHttpClient {
     };
 
     if (this.authToken) {
-      (headers as any).Authorization = `Bearer ${this.authToken}`;
+      headers.Authorization = `Bearer ${this.authToken}`;
     }
 
     return {
