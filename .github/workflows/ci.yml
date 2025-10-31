@@ -44,15 +44,15 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
-      - name: Validate package
-        run: npm run validate
-
       - name: Build extension
         run: npm run compile
 
       - name: Test packaging
         if: matrix.os == 'ubuntu-latest' && matrix.node-version == 20
         run: npm run package
+
+      - name: Validate package
+        run: npm run validate
 
       - name: Upload VSIX artifact
         if: matrix.os == 'ubuntu-latest' && matrix.node-version == 20
