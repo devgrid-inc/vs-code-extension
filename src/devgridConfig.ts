@@ -1,19 +1,13 @@
-import * as vscode from "vscode";
-import * as path from "path";
-import { promises as fs } from "fs";
-import yaml from "js-yaml";
-import {
-  DevGridFileConfig,
-  DevGridIdentifiers,
-  DevGridProjectComponentConfig,
-} from "./types";
-import {
-  deriveRepositorySlug,
-  getRemoteUrl,
-  getRepositoryRoot,
-} from "./gitUtils";
+import { promises as fs } from 'fs';
+import * as path from 'path';
 
-const CONFIG_FILE_CANDIDATES = ["devgrid.yaml", "devgrid.yml"];
+import yaml from 'js-yaml';
+import * as vscode from 'vscode';
+
+import { getRepositoryRoot } from './gitUtils';
+import type { DevGridFileConfig, DevGridIdentifiers, DevGridProjectComponentConfig } from './types';
+
+const CONFIG_FILE_CANDIDATES = ['devgrid.yaml', 'devgrid.yml'];
 
 export interface DevGridContext {
   workspaceFolder: vscode.WorkspaceFolder;
@@ -27,7 +21,7 @@ async function pathExists(candidate: string): Promise<boolean> {
   try {
     await fs.access(candidate);
     return true;
-  } catch (_error) {
+  } catch {
     return false;
   }
 }
@@ -57,21 +51,14 @@ async function findConfigPath(start: string): Promise<string | undefined> {
   return undefined;
 }
 
-async function resolveWorkspaceFolder(): Promise<
-  vscode.WorkspaceFolder | undefined
-> {
-  if (
-    !vscode.workspace.workspaceFolders ||
-    vscode.workspace.workspaceFolders.length === 0
-  ) {
+async function resolveWorkspaceFolder(): Promise<vscode.WorkspaceFolder | undefined> {
+  if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
     return undefined;
   }
 
   const activeEditor = vscode.window.activeTextEditor;
   if (activeEditor) {
-    const folder = vscode.workspace.getWorkspaceFolder(
-      activeEditor.document.uri
-    );
+    const folder = vscode.workspace.getWorkspaceFolder(activeEditor.document.uri);
     if (folder) {
       return folder;
     }
@@ -96,7 +83,7 @@ export async function loadDevGridContext(
 
   if (configPath) {
     try {
-      const raw = await fs.readFile(configPath, "utf8");
+      const raw = await fs.readFile(configPath, 'utf8');
       const parsed = yaml.load(raw) as DevGridFileConfig | undefined;
       if (parsed) {
         const normalized = await normalizeIdentifiers(parsed, {
@@ -110,11 +97,7 @@ export async function loadDevGridContext(
           repositoryRoot,
           configPath,
           config: parsed,
-          identifiers: await enrichIdentifiers(
-            identifiers,
-            projectRoot,
-            outputChannel
-          ),
+          identifiers: await enrichIdentifiers(identifiers, projectRoot, outputChannel),
         };
       }
     } catch (error) {
@@ -129,33 +112,16 @@ export async function loadDevGridContext(
     repositoryRoot,
     configPath,
     config: undefined,
-    identifiers: await enrichIdentifiers(
-      identifiers,
-      projectRoot,
-      outputChannel
-    ),
+    identifiers: await enrichIdentifiers(identifiers, projectRoot, outputChannel),
   };
 }
 
 async function enrichIdentifiers(
   identifiers: DevGridIdentifiers,
-  repoPath: string,
-  outputChannel?: vscode.OutputChannel
+  _repoPath: string,
+  _outputChannel?: vscode.OutputChannel
 ): Promise<DevGridIdentifiers> {
-  if (!identifiers.repositorySlug) {
-    const remoteUrl = await getRemoteUrl(repoPath);
-    outputChannel?.appendLine(
-      `[DevGrid:enrichIdentifiers] remoteUrl=${remoteUrl ?? "(none)"}`
-    );
-    const slug = deriveRepositorySlug(remoteUrl);
-    outputChannel?.appendLine(
-      `[DevGrid:enrichIdentifiers] derived slug=${slug ?? "(none)"}`
-    );
-    if (slug) {
-      identifiers.repositorySlug = slug;
-    }
-  }
-
+  // No enrichment needed anymore - repositorySlug has been removed
   return identifiers;
 }
 
@@ -171,10 +137,7 @@ async function normalizeIdentifiers(
 ): Promise<DevGridIdentifiers> {
   const identifiers: DevGridIdentifiers = {};
 
-  const setIfEmpty = (
-    key: keyof DevGridIdentifiers,
-    value: string | undefined
-  ) => {
+  const setIfEmpty = (key: keyof DevGridIdentifiers, value: string | undefined) => {
     if (!identifiers[key] && value) {
       identifiers[key] = value;
     }
@@ -191,84 +154,107 @@ async function normalizeIdentifiers(
     }
   }
 
-  const fallback = (getter: (cfg: any) => unknown): string | undefined => {
+  const fallback = <Value>(getter: (cfg: DevGridFileConfig) => Value): string | undefined => {
     try {
-      return safeString(getter(config));
+      const value = getter(config);
+      if (typeof value === 'number') {
+        return value.toString();
+      }
+      return safeString(value);
     } catch {
       return undefined;
     }
   };
 
-  setIfEmpty("repositoryId", fallback((cfg) => cfg.repositoryId));
-  setIfEmpty("repositoryId", fallback((cfg) => cfg.repository_id));
-  setIfEmpty("repositorySlug", fallback((cfg) => cfg.repositorySlug));
-  setIfEmpty("repositorySlug", fallback((cfg) => cfg.repository_slug));
-  setIfEmpty("repositorySlug", fallback((cfg) => cfg.repository?.slug));
+  setIfEmpty(
+    'repositoryId',
+    fallback(cfg => cfg.repositoryId)
+  );
+  setIfEmpty(
+    'repositoryId',
+    fallback(cfg => cfg.repository_id)
+  );
 
-  setIfEmpty("componentId", fallback((cfg) => cfg.componentId));
-  setIfEmpty("componentId", fallback((cfg) => cfg.component_id));
-  setIfEmpty("componentId", fallback((cfg) => cfg.component?.id));
-  setIfEmpty("componentSlug", fallback((cfg) => cfg.componentSlug));
-  setIfEmpty("componentSlug", fallback((cfg) => cfg.component_slug));
-  setIfEmpty("componentSlug", fallback((cfg) => cfg.component?.slug));
+  setIfEmpty(
+    'componentId',
+    fallback(cfg => cfg.componentId)
+  );
+  setIfEmpty(
+    'componentId',
+    fallback(cfg => cfg.component_id)
+  );
+  setIfEmpty(
+    'componentId',
+    fallback(cfg => cfg.component?.id)
+  );
+  setIfEmpty(
+    'componentSlug',
+    fallback(cfg => cfg.componentSlug)
+  );
+  setIfEmpty(
+    'componentSlug',
+    fallback(cfg => cfg.component_slug)
+  );
+  setIfEmpty(
+    'componentSlug',
+    fallback(cfg => cfg.component?.slug)
+  );
 
-  setIfEmpty("applicationId", fallback((cfg) => cfg.applicationId));
-  setIfEmpty("applicationId", fallback((cfg) => cfg.application_id));
-  setIfEmpty("applicationId", fallback((cfg) => cfg.application?.id));
-  setIfEmpty("applicationSlug", fallback((cfg) => cfg.applicationSlug));
-  setIfEmpty("applicationSlug", fallback((cfg) => cfg.application_slug));
-  setIfEmpty("applicationSlug", fallback((cfg) => cfg.application?.slug));
+  setIfEmpty(
+    'applicationId',
+    fallback(cfg => cfg.applicationId)
+  );
+  setIfEmpty(
+    'applicationId',
+    fallback(cfg => cfg.application_id)
+  );
+  setIfEmpty(
+    'applicationId',
+    fallback(cfg => cfg.application?.id)
+  );
+  setIfEmpty(
+    'applicationSlug',
+    fallback(cfg => cfg.applicationSlug)
+  );
+  setIfEmpty(
+    'applicationSlug',
+    fallback(cfg => cfg.application_slug)
+  );
+  setIfEmpty(
+    'applicationSlug',
+    fallback(cfg => cfg.application?.slug)
+  );
 
-  const project = config.project;
+  const { project } = config;
   if (project) {
     // Handle both string and numeric appId values
-    const appId = project.appId;
+    const { appId } = project;
     if (appId !== undefined) {
-      const appIdString = typeof appId === "string" ? appId : String(appId);
-      options.outputChannel?.appendLine(`[DevGrid:config] Found project.appId=${appId} (converted to string: ${appIdString})`);
-      setIfEmpty("applicationId", appIdString);
+      const appIdString = typeof appId === 'string' ? appId : String(appId);
+      options.outputChannel?.appendLine(
+        `[DevGrid:config] Found project.appId=${appId} (converted to string: ${appIdString})`
+      );
+      setIfEmpty('applicationId', appIdString);
     }
-    setIfEmpty(
-      "applicationSlug",
-      safeString((project as Record<string, unknown>)?.appSlug as string)
-    );
+    setIfEmpty('applicationSlug', safeString(project.appSlug));
 
     const component = await selectComponent(project.components, options);
     if (component) {
-      const attributes =
-        (component.attributes as Record<string, unknown> | undefined) ?? {};
+      const attributes = component.attributes ?? {};
       const shortId = safeString(component.shortId);
       if (shortId) {
-        setIfEmpty("componentSlug", shortId);
+        setIfEmpty('componentSlug', shortId);
       }
-      setIfEmpty("componentSlug", safeString(attributes.slug as string));
-      setIfEmpty("componentSlug", safeString(component.name));
+      setIfEmpty('componentSlug', safeString(attributes['slug']));
+      setIfEmpty('componentSlug', safeString(component.name));
 
-      setIfEmpty("componentId", safeString(attributes.id as string));
-      setIfEmpty("componentId", safeString(attributes.custom_id as string));
-      setIfEmpty("componentId", safeString(attributes.component_id as string));
-
-      const sourceRepository = safeString(
-        attributes.source_code_repository as string
-      );
-      if (sourceRepository) {
-        setIfEmpty("repositorySlug", deriveRepositorySlug(sourceRepository));
-      }
-
-      setIfEmpty(
-        "repositorySlug",
-        safeString(attributes.repositorySlug as string)
-      );
-      setIfEmpty(
-        "repositorySlug",
-        safeString(attributes.repository_slug as string)
-      );
+      setIfEmpty('componentId', safeString(attributes['id']));
+      setIfEmpty('componentId', safeString(attributes['custom_id']));
+      setIfEmpty('componentId', safeString(attributes['component_id']));
     }
   }
 
-  options.outputChannel?.appendLine(
-    `[DevGrid:config] identifiers=${JSON.stringify(identifiers)}`
-  );
+  options.outputChannel?.appendLine(`[DevGrid:config] identifiers=${JSON.stringify(identifiers)}`);
 
   return identifiers;
 }
@@ -302,7 +288,7 @@ async function selectComponent(
     let manifestExists = false;
     let apiExists = false;
 
-    const manifest = safeString(component?.manifest as string);
+    const manifest = safeString(component?.manifest);
     if (manifest) {
       const absolute = path.resolve(configDir, manifest);
       if (await pathExists(absolute)) {
@@ -311,7 +297,7 @@ async function selectComponent(
       }
     }
 
-    const api = safeString(component?.api as string);
+    const api = safeString(component?.api);
     if (api) {
       const absolute = path.resolve(configDir, api);
       if (await pathExists(absolute)) {
@@ -320,12 +306,11 @@ async function selectComponent(
       }
     }
 
-    const attributes =
-      (component?.attributes as Record<string, unknown> | undefined) ?? {};
+    const attributes = (component?.attributes as Record<string, unknown> | undefined) ?? {};
     if (attributes?.default === true) {
       score += 3;
     }
-    if (safeString(attributes?.custom_id as string)) {
+    if (safeString(attributes['custom_id'])) {
       score += 1;
     }
 
@@ -351,12 +336,15 @@ async function selectComponent(
 function componentLabel(component: DevGridProjectComponentConfig): string {
   const name = safeString(component.name);
   const shortId = safeString(component.shortId);
-  return [shortId, name].filter(Boolean).join(" / ") || "unknown";
+  return [shortId, name].filter(Boolean).join(' / ') || 'unknown';
 }
 
 function safeString(value: unknown): string | undefined {
-  if (typeof value === "string" && value.trim().length > 0) {
+  if (typeof value === 'string' && value.trim().length > 0) {
     return value.trim();
+  }
+  if (typeof value === 'number') {
+    return value.toString();
   }
   return undefined;
 }

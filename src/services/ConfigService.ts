@@ -1,22 +1,27 @@
 import * as fs from 'fs';
 import * as path from 'path';
+
 import * as yaml from 'js-yaml';
 import * as vscode from 'vscode';
-import type { DevGridFileConfig, DevGridIdentifiers } from '../types';
+
+import { ConfigurationError, ValidationError } from '../errors/DevGridError';
 import type { IConfigLoader, DevGridContext } from '../interfaces/IConfigLoader';
 import type { ILogger } from '../interfaces/ILogger';
-import { ConfigurationError, ValidationError } from '../errors/DevGridError';
+import type { DevGridFileConfig, DevGridIdentifiers } from '../types';
 
 /**
  * Configuration service implementation
  */
 export class ConfigService implements IConfigLoader {
+  // eslint-disable-next-line no-useless-constructor -- TypeScript parameter properties for dependency injection
   constructor(private logger: ILogger) {}
 
   /**
    * Loads and normalizes DevGrid configuration from the workspace
    */
-  async loadConfig(outputChannel?: { appendLine: (message: string) => void }): Promise<DevGridFileConfig | undefined> {
+  async loadConfig(_outputChannel?: {
+    appendLine: (message: string) => void;
+  }): Promise<DevGridFileConfig | undefined> {
     const workspaceFolder = this.getWorkspaceFolder();
     if (!workspaceFolder) {
       this.logger.debug('No workspace folder found');
@@ -32,7 +37,7 @@ export class ConfigService implements IConfigLoader {
     try {
       const configContent = await this.readConfigFile(configPath);
       const config = this.parseConfigFile(configContent);
-      
+
       this.logger.info('Configuration loaded successfully', {
         path: configPath,
         hasIdentifiers: !!config.identifiers,
@@ -59,15 +64,27 @@ export class ConfigService implements IConfigLoader {
   ): DevGridIdentifiers {
     const identifiers: DevGridIdentifiers = {};
 
+    const normalizeString = (value: unknown): string | undefined => {
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        return trimmed.length > 0 ? trimmed : undefined;
+      }
+      if (typeof value === 'number') {
+        return String(value);
+      }
+      return undefined;
+    };
+
     // Helper function to set value if not already set
-    const setIfEmpty = (key: keyof DevGridIdentifiers, value: string | undefined) => {
-      if (value && !identifiers[key]) {
-        identifiers[key] = value;
+    const setIfEmpty = (key: keyof DevGridIdentifiers, value: unknown) => {
+      const normalized = normalizeString(value);
+      if (normalized && !identifiers[key]) {
+        identifiers[key] = normalized;
       }
     };
 
     // Helper function to get value with fallback
-    const fallback = (getter: (cfg: DevGridFileConfig) => string | undefined) => {
+    const fallback = (getter: (cfg: DevGridFileConfig) => unknown) => {
       try {
         return getter(config);
       } catch {
@@ -77,7 +94,6 @@ export class ConfigService implements IConfigLoader {
 
     // Load from identifiers section
     if (config.identifiers) {
-      setIfEmpty('repositorySlug', config.identifiers.repositorySlug);
       setIfEmpty('repositoryId', config.identifiers.repositoryId);
       setIfEmpty('componentSlug', config.identifiers.componentSlug);
       setIfEmpty('componentId', config.identifiers.componentId);
@@ -86,33 +102,71 @@ export class ConfigService implements IConfigLoader {
     }
 
     // Load from root level (legacy support)
-    setIfEmpty('repositorySlug', fallback(cfg => cfg.repositorySlug as string));
-    setIfEmpty('repositoryId', fallback(cfg => cfg.repositoryId as string));
-    setIfEmpty('componentSlug', fallback(cfg => cfg.componentSlug as string));
-    setIfEmpty('componentId', fallback(cfg => cfg.componentId as string));
-    setIfEmpty('applicationSlug', fallback(cfg => cfg.applicationSlug as string));
-    setIfEmpty('applicationId', fallback(cfg => cfg.applicationId as string));
+    setIfEmpty(
+      'repositoryId',
+      fallback(cfg => cfg.repositoryId)
+    );
+    setIfEmpty(
+      'componentSlug',
+      fallback(cfg => cfg.componentSlug)
+    );
+    setIfEmpty(
+      'componentId',
+      fallback(cfg => cfg.componentId)
+    );
+    setIfEmpty(
+      'applicationSlug',
+      fallback(cfg => cfg.applicationSlug)
+    );
+    setIfEmpty(
+      'applicationId',
+      fallback(cfg => cfg.applicationId)
+    );
+
+    setIfEmpty(
+      'repositoryId',
+      fallback(cfg => cfg['repository_id'])
+    );
+    setIfEmpty(
+      'componentSlug',
+      fallback(cfg => cfg['component_slug'])
+    );
+    setIfEmpty(
+      'componentId',
+      fallback(cfg => cfg['component_id'])
+    );
+    setIfEmpty(
+      'applicationSlug',
+      fallback(cfg => cfg['application_slug'])
+    );
+    setIfEmpty(
+      'applicationId',
+      fallback(cfg => cfg['application_id'])
+    );
 
     // Load from nested objects
-    setIfEmpty('repositorySlug', fallback(cfg => (cfg.repository as any)?.slug));
-    setIfEmpty('componentSlug', fallback(cfg => (cfg.component as any)?.slug));
-    setIfEmpty('componentId', fallback(cfg => (cfg.component as any)?.id));
-    setIfEmpty('applicationSlug', fallback(cfg => (cfg.application as any)?.slug));
-    setIfEmpty('applicationId', fallback(cfg => (cfg.application as any)?.id));
+    setIfEmpty('componentSlug', config.component?.slug);
+    setIfEmpty('componentId', config.component?.id);
+    const { application } = config;
+    if (application) {
+      setIfEmpty('applicationSlug', application.slug);
+      setIfEmpty('applicationId', application.id);
+    }
 
     // Handle project.appId (numeric values)
     const appId = config.project?.appId;
     if (appId !== undefined) {
-      const appIdString = typeof appId === 'string' ? appId : String(appId);
-      outputChannel?.appendLine(`[DevGrid:config] Found project.appId=${appId} (converted to string: ${appIdString})`);
-      setIfEmpty('applicationId', appIdString);
+      outputChannel?.appendLine(`[DevGrid:config] Found project.appId=${appId}`);
+      setIfEmpty('applicationId', appId);
     }
 
     // Handle project.components selection
     if (config.project?.components && config.project.components.length > 0) {
       const selectedComponent = this.selectComponent(config.project.components);
       if (selectedComponent) {
-        outputChannel?.appendLine(`[DevGrid:config] selected component=${selectedComponent.shortId} / ${selectedComponent.name}`);
+        outputChannel?.appendLine(
+          `[DevGrid:config] selected component=${selectedComponent.shortId} / ${selectedComponent.name}`
+        );
         setIfEmpty('componentSlug', selectedComponent.shortId);
         setIfEmpty('componentId', selectedComponent.id);
       }
@@ -126,7 +180,9 @@ export class ConfigService implements IConfigLoader {
   /**
    * Loads DevGrid context including configuration and identifiers
    */
-  async loadDevGridContext(outputChannel?: { appendLine: (message: string) => void }): Promise<DevGridContext | undefined> {
+  async loadDevGridContext(outputChannel?: {
+    appendLine: (message: string) => void;
+  }): Promise<DevGridContext | undefined> {
     const config = await this.loadConfig(outputChannel);
     if (!config) {
       return undefined;
@@ -139,7 +195,7 @@ export class ConfigService implements IConfigLoader {
 
     const identifiers = this.normalizeIdentifiers(config, outputChannel);
     const endpoints = this.extractEndpoints(config);
-    
+
     return {
       workspaceFolder,
       config,
@@ -214,7 +270,7 @@ export class ConfigService implements IConfigLoader {
   private parseConfigFile(content: string): DevGridFileConfig {
     try {
       const config = yaml.load(content) as DevGridFileConfig;
-      
+
       if (!config || typeof config !== 'object') {
         throw new ValidationError('Configuration file is empty or invalid');
       }
@@ -224,7 +280,7 @@ export class ConfigService implements IConfigLoader {
       if (error instanceof ValidationError) {
         throw error;
       }
-      
+
       throw new ConfigurationError('Failed to parse configuration file', {
         error: error instanceof Error ? error.message : String(error),
       });
@@ -234,11 +290,21 @@ export class ConfigService implements IConfigLoader {
   /**
    * Selects the appropriate component from the project components
    */
-  private selectComponent(components: Array<{ shortId?: string; id?: string; name?: string; manifest?: string; api?: string }>): {
-    shortId?: string;
-    id?: string;
-    name?: string;
-  } | undefined {
+  private selectComponent(
+    components: Array<{
+      shortId?: string;
+      id?: string;
+      name?: string;
+      manifest?: string;
+      api?: string;
+    }>
+  ):
+    | {
+        shortId?: string;
+        id?: string;
+        name?: string;
+      }
+    | undefined {
     if (components.length === 0) {
       return undefined;
     }
@@ -248,8 +314,8 @@ export class ConfigService implements IConfigLoader {
     }
 
     // Look for component with default attribute
-    const defaultComponent = components.find(comp => 
-      comp.manifest === 'package.json' || comp.api === 'swagger.yml'
+    const defaultComponent = components.find(
+      comp => comp.manifest === 'package.json' || comp.api === 'swagger.yml'
     );
 
     if (defaultComponent) {

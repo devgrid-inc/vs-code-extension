@@ -2,7 +2,7 @@
   "name": "devgrid-vscode-extension",
   "displayName": "DevGrid: EngOps Insights",
   "description": "Enterprise EngOps insights for vulnerabilities, incidents, and dependencies. Seamlessly integrate DevGrid's comprehensive platform into your VS Code workflow.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "devgrid",
   "engines": {
     "vscode": "^1.85.0"
@@ -44,7 +44,13 @@
     "onCommand:devgrid.openDashboard",
     "onCommand:devgrid.signIn",
     "onCommand:devgrid.signOut",
-    "onCommand:devgrid.showAccount"
+    "onCommand:devgrid.showAccount",
+    "onCommand:devgrid.openSetupGuide",
+    "onCommand:devgrid.createYamlTemplate",
+    "onCommand:devgrid.clearCache",
+    "onCommand:devgrid.pauseAutoRefresh",
+    "onCommand:devgrid.resumeAutoRefresh",
+    "onCommand:devgrid.debugGit"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -76,6 +82,38 @@
       {
         "command": "devgrid.openVulnerability",
         "title": "DevGrid: Open Vulnerability Details"
+      },
+      {
+        "command": "devgrid.openSetupGuide",
+        "title": "DevGrid: Open YAML Setup Guide"
+      },
+      {
+        "command": "devgrid.createYamlTemplate",
+        "title": "DevGrid: Create YAML Template"
+      },
+      {
+        "command": "devgrid.clearCache",
+        "title": "DevGrid: Clear Cache"
+      },
+      {
+        "command": "devgrid.pauseAutoRefresh",
+        "title": "DevGrid: Pause Auto-Refresh"
+      },
+      {
+        "command": "devgrid.resumeAutoRefresh",
+        "title": "DevGrid: Resume Auto-Refresh"
+      },
+      {
+        "command": "devgrid.debugGit",
+        "title": "DevGrid: Debug Git Configuration"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "devgrid.refresh",
+        "key": "ctrl+shift+r ctrl+shift+d",
+        "mac": "cmd+shift+r cmd+shift+d",
+        "when": "editorTextFocus"
       }
     ],
     "views": {
@@ -112,13 +150,69 @@
         },
         "devgrid.maxItemsPerSection": {
           "type": "number",
+          "default": 100,
+          "minimum": 1,
+          "maximum": 500,
+          "markdownDescription": "Maximum number of vulnerabilities, incidents, and dependencies to display in the DevGrid tree view. Higher values may impact performance."
+        },
+        "devgrid.autoRefresh.enabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Automatically refresh DevGrid insights in the background every few minutes."
+        },
+        "devgrid.autoRefresh.intervalMinutes": {
+          "type": "number",
           "default": 5,
           "minimum": 1,
-          "maximum": 50,
-          "markdownDescription": "Maximum number of vulnerabilities, incidents, and dependencies to display in the DevGrid tree view."
+          "maximum": 60,
+          "markdownDescription": "How often to automatically refresh DevGrid insights (in minutes)."
+        },
+        "devgrid.logging.level": {
+          "type": "string",
+          "enum": [
+            "trace",
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ],
+          "default": "info",
+          "markdownDescription": "Minimum log level to display in the DevGrid output channel. Set to `debug` to see full GraphQL queries and responses."
         }
       }
-    }
+    },
+    "walkthroughs": [
+      {
+        "id": "devgrid.quickStart",
+        "title": "Get Started with DevGrid",
+        "description": "Learn how to use DevGrid to monitor vulnerabilities, incidents, and dependencies in your workspace.",
+        "steps": [
+          {
+            "id": "devgrid.signIn",
+            "title": "Sign In to DevGrid",
+            "description": "Connect your DevGrid account to start viewing insights.\n\nClick the button below to sign in with your DevGrid credentials.\n\n[Sign In](command:devgrid.signIn)",
+            "completionToast": {
+              "title": "Great! You've signed in to DevGrid.",
+              "message": "You can now view your insights."
+            }
+          },
+          {
+            "id": "devgrid.viewInsights",
+            "title": "View Your Insights",
+            "description": "Open the DevGrid Insights view in the Explorer sidebar to see your vulnerabilities, incidents, and dependencies.\n\n1. Look for **DevGrid Insights** in the Explorer panel (left sidebar)\n2. If you don't see it, click the Explorer icon or press `Cmd+Shift+E` (Mac) / `Ctrl+Shift+E` (Windows/Linux)\n3. The view will show your security insights once you're signed in and have data\n\nYou can also use the command palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and search for \"DevGrid: Refresh Insights\" to update your data.",
+            "media": {
+              "path": "media/icon.png",
+              "altText": "DevGrid Insights view"
+            }
+          },
+          {
+            "id": "devgrid.refresh",
+            "title": "Refresh Your Data",
+            "description": "Refresh your DevGrid insights to get the latest data.\n\nThe extension automatically refreshes every 5 minutes, but you can manually refresh at any time.\n\n[Refresh Insights Now](command:devgrid.refresh)\n\n**Tip:** You can configure the auto-refresh interval in VS Code settings (search for \"DevGrid\")."
+          }
+        ]
+      }
+    ]
   },
   "authentication": [
     {
@@ -140,10 +234,28 @@
     "lint:fix": "eslint src --ext ts --fix",
     "format": "prettier --write \"src/**/*.{ts,js,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
-    "package": "vsce package",
-    "publish": "vsce publish"
+    "check": "npm run lint && npm run test:run && npm run format:check",
+    "validate": "node scripts/validate-package.js",
+    "package": "npm run validate && vsce package",
+    "publish": "vsce publish",
+    "commit": "cz",
+    "release": "standard-version",
+    "release:minor": "standard-version --release-as minor",
+    "release:major": "standard-version --release-as major",
+    "release:patch": "standard-version --release-as patch",
+    "release:alpha": "standard-version --prerelease alpha",
+    "release:beta": "standard-version --prerelease beta",
+    "release:rc": "standard-version --prerelease rc",
+    "release:dry": "standard-version --dry-run"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.6.0",
+    "@commitlint/config-conventional": "^19.6.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.19.24",
     "@types/vscode": "^1.85.0",
@@ -151,15 +263,18 @@
     "@typescript-eslint/parser": "^8.46.2",
     "@vitest/ui": "^4.0.5",
     "@vscode/vsce": "^3.6.2",
+    "@vitest/coverage-v8": "^4.0.6",
+    "commitizen": "^4.3.1",
+    "cz-conventional-changelog": "^3.3.0",
     "esbuild": "^0.25.11",
     "eslint": "^8.57.0",
     "eslint-plugin-import": "^2.32.0",
     "prettier": "^3.6.2",
+    "standard-version": "^9.5.0",
     "typescript": "^5.4.5",
     "vitest": "^4.0.5"
   },
   "dependencies": {
-    "graphql": "^16.9.0",
     "js-yaml": "^4.1.0"
   }
 }

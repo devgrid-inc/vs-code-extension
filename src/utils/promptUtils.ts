@@ -15,7 +15,9 @@ export function buildRemediationPrompt(details: DevGridVulnerabilityDetails): st
   if (details.severity) {
     parts.push(`**Severity:** ${details.severity.toUpperCase()}`);
     if (details.cvss?.baseScore) {
-      parts.push(`**CVSS Score:** ${details.cvss.baseScore.toFixed(1)}${details.cvss.vector ? ` (${details.cvss.vector})` : ''}`);
+      parts.push(
+        `**CVSS Score:** ${details.cvss.baseScore.toFixed(1)}${details.cvss.vector ? ` (${details.cvss.vector})` : ''}`
+      );
     }
   }
   parts.push('');
@@ -120,7 +122,9 @@ export function buildRemediationPrompt(details: DevGridVulnerabilityDetails): st
   parts.push('### Request');
   parts.push('Please analyze this vulnerability and provide:');
   parts.push('1. **Risk Assessment**: What are the potential impacts and exploitability?');
-  parts.push('2. **Remediation Steps**: Specific commands and changes needed to fix this vulnerability');
+  parts.push(
+    '2. **Remediation Steps**: Specific commands and changes needed to fix this vulnerability'
+  );
   parts.push('3. **Code Changes**: What files need to be modified and how?');
   parts.push('4. **Testing**: How to verify the fix works correctly');
   parts.push('5. **Prevention**: How to avoid similar issues in the future');

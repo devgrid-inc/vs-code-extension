@@ -1,5 +1,4 @@
 export interface DevGridIdentifiers {
-  repositorySlug?: string;
   repositoryId?: string;
   componentSlug?: string;
   componentId?: string;
@@ -50,6 +49,17 @@ export interface DevGridFileConfig {
   endpoints?: DevGridEndpointTemplates;
   project?: DevGridProjectConfig;
   metadata?: Record<string, unknown>;
+  repositoryId?: string | number;
+  componentSlug?: string;
+  componentId?: string | number;
+  applicationSlug?: string;
+  applicationId?: string | number;
+  component?: DevGridProjectComponentConfig;
+  application?: {
+    id?: string | number;
+    slug?: string;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 }
 
@@ -145,6 +155,11 @@ export interface DevGridDependency {
   url?: string;
 }
 
+export interface DevGridLinkageStatus {
+  repoComponentLinked: boolean | null;
+  message: string;
+}
+
 export interface DevGridInsightBundle {
   application?: DevGridEntitySummary;
   component?: DevGridEntitySummary;
@@ -152,10 +167,11 @@ export interface DevGridInsightBundle {
   vulnerabilities: DevGridVulnerability[];
   incidents: DevGridIncident[];
   dependencies: DevGridDependency[];
+  linkageStatus?: DevGridLinkageStatus;
 }
 
 export interface DevGridTreeItemData {
-  kind: "section" | "entity" | "detail" | "empty" | "info";
+  kind: 'section' | 'entity' | 'detail' | 'empty' | 'info';
   label: string;
   description?: string;
   tooltip?: string;

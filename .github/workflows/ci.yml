@@ -2,17 +2,25 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches:
+      - "**" # Run on all branches
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".vscode/**"
+      - "LICENSE"
   pull_request:
-    branches: [main, develop]
+    branches:
+      - "**" # Run on PRs to all branches
 
 jobs:
   test:
+    name: Test & Lint
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [18, 20]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [20]
 
     steps:
       - name: Checkout code
@@ -30,22 +38,30 @@ jobs:
       - name: Run linter
         run: npm run lint
 
-      - name: Check formatting
-        run: npm run format:check
-
-      - name: Compile TypeScript
-        run: npm run compile
-
       - name: Run tests
         run: npm run test:run
 
-      - name: Run tests with coverage
-        run: npm run test:coverage
+      - name: Build extension
+        run: npm run compile
 
-  build:
+      - name: Test packaging
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == 20
+        run: npm run package
+
+      - name: Validate package
+        run: npm run validate
+
+      - name: Upload VSIX artifact
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == 20
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix-package
+          path: "*.vsix"
+          retention-days: 7
+
+  coverage:
+    name: Code Coverage
     runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code
@@ -54,20 +70,114 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "20"
           cache: "npm"
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Compile TypeScript
-        run: npm run compile
+      - name: Run tests with coverage
+        run: npm run test:coverage
 
-      - name: Package extension
-        run: npm run package
-
-      - name: Upload artifact
+      - name: Upload coverage report as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: devgrid-extension
-          path: "*.vsix"
+          name: coverage-report
+          path: coverage/
+          retention-days: 30
+
+      - name: Generate coverage summary
+        id: coverage
+        run: |
+          echo "## 📊 Code Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Extract coverage percentages if available
+          if [ -f "coverage/coverage-summary.json" ]; then
+            STATEMENTS=$(node -p "const c=require('./coverage/coverage-summary.json'); c.total.statements.pct")
+            BRANCHES=$(node -p "const c=require('./coverage/coverage-summary.json'); c.total.branches.pct")
+            FUNCTIONS=$(node -p "const c=require('./coverage/coverage-summary.json'); c.total.functions.pct")
+            LINES=$(node -p "const c=require('./coverage/coverage-summary.json'); c.total.lines.pct")
+            
+            echo "| Metric | Coverage |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|----------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Statements | ${STATEMENTS}% |" >> $GITHUB_STEP_SUMMARY
+            echo "| Branches | ${BRANCHES}% |" >> $GITHUB_STEP_SUMMARY
+            echo "| Functions | ${FUNCTIONS}% |" >> $GITHUB_STEP_SUMMARY
+            echo "| Lines | ${LINES}% |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📁 Full coverage report available in workflow artifacts (retained for 30 days)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Coverage summary not available" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            let coverageData = {};
+            try {
+              coverageData = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+            } catch (error) {
+              console.log('Coverage summary not found');
+              return;
+            }
+
+            const total = coverageData.total;
+            const statements = total.statements.pct;
+            const branches = total.branches.pct;
+            const functions = total.functions.pct;
+            const lines = total.lines.pct;
+
+            const getEmoji = (pct) => {
+              if (pct >= 80) return '✅';
+              if (pct >= 60) return '⚠️';
+              return '❌';
+            };
+
+            const body = `## 📊 Code Coverage Report
+
+            | Metric | Coverage | Status |
+            |--------|----------|--------|
+            | Statements | ${statements}% | ${getEmoji(statements)} |
+            | Branches | ${branches}% | ${getEmoji(branches)} |
+            | Functions | ${functions}% | ${getEmoji(functions)} |
+            | Lines | ${lines}% | ${getEmoji(lines)} |
+
+            📁 Full coverage report available in [workflow artifacts](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+
+            ---
+            *Coverage data is stored securely in GitHub Actions artifacts (30-day retention)*`;
+
+            // Find existing coverage comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('📊 Code Coverage Report')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }

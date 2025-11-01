@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { buildRemediationPrompt } from '../../utils/promptUtils';
+
 import type { DevGridVulnerabilityDetails } from '../../types';
+import { buildRemediationPrompt } from '../../utils/promptUtils';
 
 describe('buildRemediationPrompt', () => {
   it('should build a complete remediation prompt with all fields', () => {
@@ -17,26 +18,26 @@ describe('buildRemediationPrompt', () => {
         {
           type: 'CVE',
           value: 'CVE-2023-12345',
-          url: 'https://cve.example.com/CVE-2023-12345'
+          url: 'https://cve.example.com/CVE-2023-12345',
         },
         {
           type: 'CWE',
           value: 'CWE-79',
-          url: 'https://cwe.mitre.org/data/definitions/79.html'
-        }
+          url: 'https://cwe.mitre.org/data/definitions/79.html',
+        },
       ],
       cvss: {
         baseScore: 9.1,
-        vector: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N'
+        vector: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N',
       },
       description: 'This vulnerability allows remote code execution via prototype pollution.',
       remediation: {
         fixedVersion: '4.17.20',
-        advice: 'Update to version 4.17.20 or later'
+        advice: 'Update to version 4.17.20 or later',
       },
       references: [
         { title: 'Advisory', url: 'https://example.com/advisory' },
-        { title: 'Fix Commit', url: 'https://github.com/lodash/lodash/commit/abc123' }
+        { title: 'Fix Commit', url: 'https://github.com/lodash/lodash/commit/abc123' },
       ],
       originatingSystem: 'SCA Scanner',
       originatingSystemId: 'sca-123',
@@ -45,7 +46,7 @@ describe('buildRemediationPrompt', () => {
       openDate: '2023-01-15T10:00:00Z',
       closeDate: undefined,
       vulnerableId: 'component-456',
-      vulnerableType: 'component'
+      vulnerableType: 'component',
     };
 
     const prompt = buildRemediationPrompt(details);
@@ -62,7 +63,9 @@ describe('buildRemediationPrompt', () => {
     expect(prompt).toContain('- **CVE:** CVE-2023-12345');
     expect(prompt).toContain('- **CWE:** CWE-79');
     expect(prompt).toContain('### Description');
-    expect(prompt).toContain('This vulnerability allows remote code execution via prototype pollution.');
+    expect(prompt).toContain(
+      'This vulnerability allows remote code execution via prototype pollution.'
+    );
     expect(prompt).toContain('### Current Remediation');
     expect(prompt).toContain('**Fixed Version:** 4.17.20');
     expect(prompt).toContain('**Advice:** Update to version 4.17.20 or later');
@@ -73,15 +76,19 @@ describe('buildRemediationPrompt', () => {
     expect(prompt).toContain('Scan Type: dependency-scan');
     expect(prompt).toContain('### Request');
     expect(prompt).toContain('Please analyze this vulnerability and provide:');
-    expect(prompt).toContain('1. **Risk Assessment**: What are the potential impacts and exploitability?');
-    expect(prompt).toContain('2. **Remediation Steps**: Specific commands and changes needed to fix this vulnerability');
+    expect(prompt).toContain(
+      '1. **Risk Assessment**: What are the potential impacts and exploitability?'
+    );
+    expect(prompt).toContain(
+      '2. **Remediation Steps**: Specific commands and changes needed to fix this vulnerability'
+    );
   });
 
   it('should handle minimal vulnerability details', () => {
     const details: DevGridVulnerabilityDetails = {
       id: 'vuln-456',
       title: 'Simple Vulnerability',
-      severity: 'medium'
+      severity: 'medium',
     };
 
     const prompt = buildRemediationPrompt(details);
@@ -102,9 +109,9 @@ describe('buildRemediationPrompt', () => {
       identifiers: [
         {
           type: 'CVE',
-          value: 'CVE-2023-99999'
-        }
-      ]
+          value: 'CVE-2023-99999',
+        },
+      ],
     };
 
     const prompt = buildRemediationPrompt(details);
@@ -120,8 +127,8 @@ describe('buildRemediationPrompt', () => {
       title: 'CVSS Only Vulnerability',
       severity: 'low',
       cvss: {
-        baseScore: 5.5
-      }
+        baseScore: 5.5,
+      },
     };
 
     const prompt = buildRemediationPrompt(details);
@@ -136,8 +143,8 @@ describe('buildRemediationPrompt', () => {
       title: 'Remediation Vulnerability',
       severity: 'high',
       remediation: {
-        advice: 'Avoid using this function in untrusted contexts'
-      }
+        advice: 'Avoid using this function in untrusted contexts',
+      },
     };
 
     const prompt = buildRemediationPrompt(details);
@@ -156,7 +163,7 @@ describe('buildRemediationPrompt', () => {
       scanType: 'code-scan',
       location: 'src/main.js',
       openDate: '2023-06-01T00:00:00Z',
-      closeDate: '2023-06-15T00:00:00Z'
+      closeDate: '2023-06-15T00:00:00Z',
     };
 
     const prompt = buildRemediationPrompt(details);
@@ -175,7 +182,7 @@ describe('buildRemediationPrompt', () => {
       title: 'Vulnerability with <script> tags',
       severity: 'critical',
       description: 'This has "quotes" and \'apostrophes\' and <html> tags',
-      packageName: 'bad&package'
+      packageName: 'bad&package',
     };
 
     const prompt = buildRemediationPrompt(details);

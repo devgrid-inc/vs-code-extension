@@ -1,4 +1,8 @@
-import type { IGraphQLClient, GraphQLResponse, GraphQLQueryOptions } from '../interfaces/IGraphQLClient';
+import type {
+  IGraphQLClient,
+  GraphQLResponse,
+  GraphQLQueryOptions,
+} from '../interfaces/IGraphQLClient';
 import type { IHttpClient } from '../interfaces/IHttpClient';
 import type { ILogger } from '../interfaces/ILogger';
 
@@ -8,6 +12,7 @@ import type { ILogger } from '../interfaces/ILogger';
 export class GraphQLClient implements IGraphQLClient {
   private endpoint = '';
 
+  // eslint-disable-next-line no-useless-constructor -- TypeScript parameter properties for dependency injection
   constructor(
     private httpClient: IHttpClient,
     private logger: ILogger
@@ -67,10 +72,12 @@ export class GraphQLClient implements IGraphQLClient {
       operationName: options?.operationName,
     };
 
+    // Log full query and variables in debug mode
     this.logger.debug('Executing GraphQL request', {
       operationName: options?.operationName,
-      variablesCount: Object.keys(variables ?? {}).length,
-      queryLength: query.length,
+      query: query.trim(),
+      variables: variables ?? {},
+      endpoint: this.endpoint,
     });
 
     try {
@@ -84,6 +91,14 @@ export class GraphQLClient implements IGraphQLClient {
           },
         }
       );
+
+      // Log full response in debug mode
+      this.logger.debug('GraphQL response received', {
+        operationName: options?.operationName,
+        hasData: !!response.data.data,
+        hasErrors: !!(response.data.errors && response.data.errors.length > 0),
+        response: response.data,
+      });
 
       if (response.data.errors && response.data.errors.length > 0) {
         this.logger.warn('GraphQL request returned errors', {

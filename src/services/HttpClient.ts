@@ -9,12 +9,16 @@ export class HttpClient implements IHttpClient {
   private defaultHeaders: Record<string, string> = {};
   private authToken = '';
 
+  // eslint-disable-next-line no-useless-constructor -- TypeScript parameter properties for dependency injection
   constructor(private logger: ILogger) {}
 
   /**
    * Makes an HTTP request with retry logic
    */
-  async request<T = unknown>(url: string, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
+  async request<T = unknown>(
+    url: string,
+    options: HttpRequestOptions = {}
+  ): Promise<HttpResponse<T>> {
     const fullUrl = this.buildUrl(url);
     const requestOptions = this.buildRequestOptions(options);
     const maxRetries = requestOptions.retries ?? 3;
@@ -30,7 +34,7 @@ export class HttpClient implements IHttpClient {
         });
 
         const response = await this.makeRequest<T>(fullUrl, requestOptions);
-        
+
         this.logger.debug(`HTTP request successful`, {
           status: response.status,
           attempt: attempt + 1,
@@ -39,7 +43,7 @@ export class HttpClient implements IHttpClient {
         return response;
       } catch (error) {
         lastError = error as Error;
-        
+
         this.logger.warn(`HTTP request failed (attempt ${attempt + 1}/${maxRetries + 1})`, {
           error: lastError.message,
           url: fullUrl,
@@ -66,7 +70,10 @@ export class HttpClient implements IHttpClient {
   /**
    * Makes a GET request
    */
-  async get<T = unknown>(url: string, options: Omit<HttpRequestOptions, 'method' | 'body'> = {}): Promise<HttpResponse<T>> {
+  async get<T = unknown>(
+    url: string,
+    options: Omit<HttpRequestOptions, 'method' | 'body'> = {}
+  ): Promise<HttpResponse<T>> {
     return this.request<T>(url, { ...options, method: 'GET' });
   }
 
@@ -115,7 +122,9 @@ export class HttpClient implements IHttpClient {
   /**
    * Builds the request options
    */
-  private buildRequestOptions(options: HttpRequestOptions): HttpRequestOptions & { headers: Record<string, string> } {
+  private buildRequestOptions(
+    options: HttpRequestOptions
+  ): HttpRequestOptions & { headers: Record<string, string> } {
     const headers = {
       'Content-Type': 'application/json',
       ...this.defaultHeaders,
@@ -123,7 +132,7 @@ export class HttpClient implements IHttpClient {
     };
 
     if (this.authToken) {
-      (headers as any).Authorization = `Bearer ${this.authToken}`;
+      headers.Authorization = `Bearer ${this.authToken}`;
     }
 
     return {
@@ -139,7 +148,10 @@ export class HttpClient implements IHttpClient {
   /**
    * Makes the actual HTTP request
    */
-  private async makeRequest<T = unknown>(url: string, options: HttpRequestOptions & { headers: Record<string, string> }): Promise<HttpResponse<T>> {
+  private async makeRequest<T = unknown>(
+    url: string,
+    options: HttpRequestOptions & { headers: Record<string, string> }
+  ): Promise<HttpResponse<T>> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), options.timeout);
 
@@ -160,11 +172,11 @@ export class HttpClient implements IHttpClient {
 
       let data: T;
       const contentType = response.headers.get('content-type');
-      
+
       if (contentType?.includes('application/json')) {
-        data = await response.json() as T;
+        data = (await response.json()) as T;
       } else {
-        data = await response.text() as T;
+        data = (await response.text()) as T;
       }
 
       return {

@@ -1,11 +1,12 @@
 import type { IDevGridClient } from '../interfaces/IDevGridClient';
 import type { ILogger } from '../interfaces/ILogger';
-import type { EntityResolver } from './EntityResolver';
-import type { VulnerabilityService } from './VulnerabilityService';
-import type { IncidentService } from './IncidentService';
-import type { DependencyService } from './DependencyService';
 import type { DevGridIdentifiers, DevGridInsightBundle, DevGridEntitySummary } from '../types';
 import { renderTemplate } from '../utils/templateUtils';
+
+import type { DependencyService } from './DependencyService';
+import type { EntityResolver, GraphEntityDetails } from './EntityResolver';
+import type { IncidentService } from './IncidentService';
+import type { VulnerabilityService } from './VulnerabilityService';
 
 /**
  * DevGrid client service that orchestrates all DevGrid operations
@@ -14,6 +15,7 @@ export class DevGridClientService implements IDevGridClient {
   private statusText = 'DevGrid: Ready';
   private dashboardUrl?: string;
 
+  // eslint-disable-next-line no-useless-constructor -- TypeScript parameter properties for dependency injection
   constructor(
     private entityResolver: EntityResolver,
     private vulnerabilityService: VulnerabilityService,
@@ -26,7 +28,10 @@ export class DevGridClientService implements IDevGridClient {
   /**
    * Fetches comprehensive insights for the given identifiers
    */
-  async fetchInsights(identifiers: DevGridIdentifiers): Promise<DevGridInsightBundle> {
+  async fetchInsights(
+    identifiers: DevGridIdentifiers,
+    workspacePath?: string
+  ): Promise<DevGridInsightBundle> {
     this.logger.info('Starting insights fetch', { identifiers });
 
     try {
@@ -44,18 +49,42 @@ export class DevGridClientService implements IDevGridClient {
       }
 
       // Load repository details
-      const repositoryDetails = await this.entityResolver.loadRepositoryDetails(context, componentDetails);
+      const repositoryDetails = await this.entityResolver.loadRepositoryDetails(
+        context,
+        componentDetails,
+        workspacePath
+      );
       if (repositoryDetails) {
         bundle.repository = this.entityResolver.toRepositorySummary(repositoryDetails);
       } else {
-        const repository = this.buildRepositorySummary(componentDetails, context);
+        const repository = this.buildRepositorySummary(componentDetails);
         if (repository) {
           bundle.repository = repository;
         }
       }
 
+      // Check repo-component linkage
+      if (bundle.component?.id && repositoryDetails) {
+        const linkageResult = this.entityResolver.checkRepoComponentLinkage(
+          bundle.component.id,
+          repositoryDetails
+        );
+        bundle.linkageStatus = {
+          repoComponentLinked: linkageResult.linked,
+          message: linkageResult.message,
+        };
+        this.logger.debug('Linkage check completed', {
+          componentId: bundle.component.id,
+          repositoryId: bundle.repository?.id,
+          linked: linkageResult.linked,
+        });
+      }
+
       // Load application details
-      const applicationDetails = await this.entityResolver.loadApplicationDetails(context, componentDetails);
+      const applicationDetails = await this.entityResolver.loadApplicationDetails(
+        context,
+        componentDetails
+      );
       if (applicationDetails) {
         bundle.application = this.entityResolver.toApplicationSummary(applicationDetails);
       } else {
@@ -76,7 +105,10 @@ export class DevGridClientService implements IDevGridClient {
       // Fetch incidents
       const incidentEntityId = context.componentId || context.repositoryId;
       if (incidentEntityId) {
-        bundle.incidents = (await this.incidentService.fetchIncidents(incidentEntityId)).slice(0, 20);
+        bundle.incidents = (await this.incidentService.fetchIncidents(incidentEntityId)).slice(
+          0,
+          20
+        );
       }
 
       // Fetch dependencies
@@ -123,12 +155,17 @@ export class DevGridClientService implements IDevGridClient {
     this.dashboardUrl = url;
   }
 
+  clearCaches(): void {
+    this.vulnerabilityService.clearCache();
+    this.incidentService.clearCache();
+    this.dependencyService.clearCache();
+  }
+
   /**
    * Builds repository summary from component details
    */
   private buildRepositorySummary(
-    componentDetails: any,
-    context: DevGridIdentifiers
+    componentDetails: GraphEntityDetails | undefined
   ): DevGridEntitySummary | undefined {
     if (!componentDetails) {
       return undefined;
@@ -162,9 +199,9 @@ export class DevGridClientService implements IDevGridClient {
 
     if (summary) {
       // Enhance with additional information
-      const repositoryUrl = this.getAttributeValue(componentDetails, 'repositoryUrl') ||
+      const repositoryUrl =
+        this.getAttributeValue(componentDetails, 'repositoryUrl') ??
         this.getAttributeValue(componentDetails, 'url');
-      const repositorySlugFromAttr = this.getAttributeValue(componentDetails, 'repositorySlug');
 
       if (repositoryUrl && !summary.url) {
         summary.url = repositoryUrl;
@@ -178,14 +215,6 @@ export class DevGridClientService implements IDevGridClient {
           summary.slug = `${pathParts[0]}/${pathParts[1]}`;
         }
       }
-
-      if (!summary.slug && repositorySlugFromAttr) {
-        summary.slug = repositorySlugFromAttr;
-      }
-
-      if (!summary.slug && context.repositorySlug) {
-        summary.slug = context.repositorySlug;
-      }
     }
 
     return summary;
@@ -195,7 +224,7 @@ export class DevGridClientService implements IDevGridClient {
    * Builds application summary from component details
    */
   private buildApplicationSummary(
-    componentDetails: any,
+    componentDetails: GraphEntityDetails | undefined,
     context: DevGridIdentifiers
   ): DevGridEntitySummary | undefined {
     if (!componentDetails) {
@@ -247,16 +276,15 @@ export class DevGridClientService implements IDevGridClient {
   /**
    * Gets attribute value from component details
    */
-  private getAttributeValue(componentDetails: any, key: string): string | undefined {
-    if (!componentDetails?.attributes) {
-      return undefined;
+  private getAttributeValue(componentDetails: GraphEntityDetails, key: string): string | undefined {
+    const value = componentDetails.attributes.get(key);
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
     }
-
-    const value = componentDetails.attributes.get?.(key);
-    if (typeof value === 'string' && value.trim().length > 0) {
-      return value.trim();
+    if (typeof value === 'number') {
+      return value.toString();
     }
-
     return undefined;
   }
 

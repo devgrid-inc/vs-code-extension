@@ -4,7 +4,11 @@ import { vi, afterEach } from 'vitest';
 // Mock VS Code API
 vi.mock('vscode', () => ({
   TreeItem: class {
-    constructor(public label: string, public collapsibleState?: any) {}
+    // eslint-disable-next-line no-useless-constructor -- Mock class for testing
+    constructor(
+      public label: string,
+      public collapsibleState?: unknown
+    ) {}
   },
   TreeItemCollapsibleState: {
     None: 0,
@@ -12,7 +16,32 @@ vi.mock('vscode', () => ({
     Expanded: 2,
   },
   ThemeIcon: class {
+    // eslint-disable-next-line no-useless-constructor -- Mock class for testing
     constructor(public icon: string) {}
+  },
+  EventEmitter: class {
+    private listeners: Array<(data?: any) => void> = [];
+
+    // eslint-disable-next-line no-useless-constructor -- Mock class for testing
+    constructor() {}
+
+    get event() {
+      return (listener: (data?: any) => void) => {
+        this.listeners.push(listener);
+        return {
+          dispose: () => {
+            const index = this.listeners.indexOf(listener);
+            if (index > -1) {
+              this.listeners.splice(index, 1);
+            }
+          },
+        };
+      };
+    }
+
+    fire(data?: any): void {
+      this.listeners.forEach(listener => listener(data));
+    }
   },
   Uri: {
     parse: vi.fn(),
@@ -22,10 +51,13 @@ vi.mock('vscode', () => ({
     One: 1,
   },
   workspace: {
-    workspaceFolders: [{
-      uri: { fsPath: '/test/workspace' },
-      name: 'test-workspace',
-    }],
+    workspaceFolders: [
+      {
+        uri: { fsPath: '/test/workspace' },
+        name: 'test-workspace',
+      },
+    ],
+    getConfiguration: vi.fn(),
   },
   window: {
     createOutputChannel: vi.fn().mockReturnValue({

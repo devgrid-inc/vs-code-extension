@@ -1,5 +1,6 @@
-import * as vscode from "vscode";
-import { DevGridAuthProvider } from "./authProvider";
+import * as vscode from 'vscode';
+
+import type { DevGridAuthProvider } from './authProvider';
 
 export interface AuthSession {
   accessToken: string;
@@ -8,11 +9,11 @@ export interface AuthSession {
 }
 
 export class AuthService {
-  private static readonly AUTH_TYPE = "devgrid-auth";
+  private static readonly AUTH_TYPE = 'devgrid-auth';
   private session: vscode.AuthenticationSession | undefined;
 
   constructor(private readonly authProvider?: DevGridAuthProvider) {
-    vscode.authentication.onDidChangeSessions((event) => {
+    vscode.authentication.onDidChangeSessions(event => {
       if (event.provider.id === AuthService.AUTH_TYPE) {
         this.session = undefined;
       }
@@ -27,12 +28,12 @@ export class AuthService {
     try {
       this.session = await vscode.authentication.getSession(
         AuthService.AUTH_TYPE,
-        ["openid", "profile", "email"],
-        { createIfNone },
+        ['openid', 'profile', 'email'],
+        { createIfNone }
       );
       return this.session;
-    } catch (error) {
-      console.error("Failed to get authentication session:", error);
+    } catch {
+      // Session retrieval failed - return undefined to indicate no session available
       return undefined;
     }
   }
@@ -41,8 +42,8 @@ export class AuthService {
     try {
       this.session = await vscode.authentication.getSession(
         AuthService.AUTH_TYPE,
-        ["openid", "profile", "email"],
-        { createIfNone: true },
+        ['openid', 'profile', 'email'],
+        { createIfNone: true }
       );
       return this.session;
     } catch (error) {
@@ -57,16 +58,10 @@ export class AuthService {
       return;
     }
 
-    try {
-      if (this.authProvider) {
-        await this.authProvider.removeSession(session.id);
-      }
-    } catch (error) {
-      console.error("Failed to remove authentication session:", error);
-      throw error;
-    } finally {
-      this.session = undefined;
+    if (this.authProvider) {
+      await this.authProvider.removeSession(session.id);
     }
+    this.session = undefined;
   }
 
   async isAuthenticated(): Promise<boolean> {

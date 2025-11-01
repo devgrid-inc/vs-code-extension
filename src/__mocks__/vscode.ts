@@ -72,7 +72,7 @@ export const mockVSCode = {
     file: vi.fn((path: string) => ({ fsPath: path })),
   },
   Disposable: {
-    from: vi.fn((...disposables: any[]) => ({
+    from: vi.fn((..._disposables: unknown[]) => ({
       dispose: vi.fn(),
     })),
   },

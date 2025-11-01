@@ -1,9 +1,9 @@
-import type { ILogger } from '../interfaces/ILogger';
-import type { IGraphQLClient } from '../interfaces/IGraphQLClient';
-import type { IGitService } from '../interfaces/IGitService';
-import type { DevGridIdentifiers, DevGridEntitySummary } from '../types';
-import { convertToHttpsUrl, extractRepoNameFromUrl } from '../utils/urlUtils';
 import { ApiError } from '../errors/DevGridError';
+import type { IGitService } from '../interfaces/IGitService';
+import type { IGraphQLClient } from '../interfaces/IGraphQLClient';
+import type { ILogger } from '../interfaces/ILogger';
+import type { DevGridIdentifiers, DevGridEntitySummary } from '../types';
+import { convertToHttpsUrl } from '../utils/urlUtils';
 
 /**
  * GraphQL response interfaces
@@ -28,7 +28,7 @@ interface GraphEntity {
   } | null> | null;
 }
 
-interface GraphEntityDetails {
+export interface GraphEntityDetails {
   entity: {
     id?: string | null;
     shortId?: string | null;
@@ -64,6 +64,11 @@ interface AllReposResponse {
     ignore?: boolean;
     readyForIntegration?: boolean;
     externalSystem?: string;
+    components?: Array<{
+      id: string;
+      shortId?: string;
+      name?: string;
+    }>;
   }>;
 }
 
@@ -71,6 +76,7 @@ interface AllReposResponse {
  * Entity resolver service for DevGrid entities
  */
 export class EntityResolver {
+  // eslint-disable-next-line no-useless-constructor -- TypeScript parameter properties for dependency injection
   constructor(
     private graphqlClient: IGraphQLClient,
     private gitService: IGitService,
@@ -80,9 +86,7 @@ export class EntityResolver {
   /**
    * Loads component details by ID or slug
    */
-  async loadComponentDetails(
-    context: DevGridIdentifiers
-  ): Promise<GraphEntityDetails | undefined> {
+  async loadComponentDetails(context: DevGridIdentifiers): Promise<GraphEntityDetails | undefined> {
     let details: GraphEntityDetails | undefined;
 
     this.logger.debug('Loading component details', {
@@ -119,53 +123,70 @@ export class EntityResolver {
    */
   async loadRepositoryDetails(
     context: DevGridIdentifiers,
-    componentDetails?: GraphEntityDetails
+    componentDetails?: GraphEntityDetails,
+    workspacePath?: string
   ): Promise<GraphEntityDetails | undefined> {
     let details: GraphEntityDetails | undefined;
 
     this.logger.debug('Loading repository details', {
       repositoryId: context.repositoryId,
-      repositorySlug: context.repositorySlug,
     });
 
     if (context.repositoryId) {
       if (context.repositoryId.includes('-')) {
-        // UUID format
+        // UUID format - use entity query for UUIDs
         details = await this.fetchEntityGraphQL({ id: context.repositoryId }, 'repo');
       } else {
-        // Short ID format
-        details = await this.fetchEntityGraphQL({ shortId: context.repositoryId }, 'repo');
-      }
-    }
-
-    if (!details && context.repositorySlug) {
-      // First try to find by shortId
-      details = await this.fetchEntityGraphQL({ shortId: context.repositorySlug }, 'repo');
-
-      // If not found by shortId, try to find by URL
-      if (!details) {
-        const gitRemoteUrl = await this.getGitRemoteUrl();
-        if (gitRemoteUrl) {
-          this.logger.debug('Searching repositories by URL', { url: gitRemoteUrl });
-          details = await this.fetchRepositoryByUrl(gitRemoteUrl);
-        }
+        // Short ID format - use allRepos query
+        details = await this.fetchRepositoryByShortId(context.repositoryId);
       }
     }
 
     if (!details && componentDetails) {
-      const relatedRepo = componentDetails.relationships.find((relationship) =>
-        relationship.to?.type ? relationship.to.type.toLowerCase() === 'repo' : false
-      );
-
-      if (relatedRepo?.to) {
-        context.repositoryId = relatedRepo.to.id ?? context.repositoryId;
-        context.repositorySlug = relatedRepo.to.shortId ?? context.repositorySlug;
-
-        if (relatedRepo.to.id) {
-          details = await this.fetchEntityGraphQL({ id: relatedRepo.to.id }, 'repo');
-        } else if (relatedRepo.to.shortId) {
-          details = await this.fetchEntityGraphQL({ shortId: relatedRepo.to.shortId }, 'repo');
+      // First, try to get repository from component's source_code_repository attribute
+      const sourceCodeRepo = componentDetails.attributes.get('source_code_repository');
+      if (sourceCodeRepo) {
+        const repoUrl = this.attributeValueToString(sourceCodeRepo);
+        if (repoUrl) {
+          // Remove .git suffix if present
+          const normalizedUrl = repoUrl.replace(/\.git$/, '');
+          this.logger.debug('Fetching repository by component source_code_repository', {
+            url: normalizedUrl,
+          });
+          details = await this.fetchRepositoryByUrl(normalizedUrl);
         }
+      }
+
+      // Second, try repository relationship from component
+      if (!details) {
+        const relatedRepo = componentDetails.relationships.find(relationship =>
+          relationship.to?.type ? relationship.to.type.toLowerCase() === 'repo' : false
+        );
+
+        if (relatedRepo?.to) {
+          context.repositoryId = relatedRepo.to.id ?? context.repositoryId;
+
+          if (relatedRepo.to.id) {
+            details = await this.fetchEntityGraphQL({ id: relatedRepo.to.id }, 'repo');
+          } else if (relatedRepo.to.shortId) {
+            details = await this.fetchRepositoryByShortId(relatedRepo.to.shortId);
+          }
+        }
+      }
+    }
+
+    // Last resort: try git remote URL as fallback
+    if (!details) {
+      // Get Git remote URL and use it for repository lookup
+      const gitRemoteUrl = await this.getGitRemoteUrl(workspacePath);
+      if (gitRemoteUrl) {
+        // Remove .git suffix if present
+        const repoUrl = gitRemoteUrl.replace(/\.git$/, '');
+        this.logger.debug('Fetching repository by Git remote URL', {
+          originalUrl: gitRemoteUrl,
+          url: repoUrl,
+        });
+        details = await this.fetchRepositoryByUrl(repoUrl);
       }
     }
 
@@ -176,7 +197,6 @@ export class EntityResolver {
       });
 
       context.repositoryId = details.entity.id ?? context.repositoryId;
-      context.repositorySlug = details.entity.shortId ?? context.repositorySlug;
     } else {
       this.logger.debug('No repository found');
     }
@@ -213,7 +233,7 @@ export class EntityResolver {
     }
 
     if (!details && componentDetails) {
-      const relatedApp = componentDetails.relationships.find((relationship) =>
+      const relatedApp = componentDetails.relationships.find(relationship =>
         relationship.to?.type ? relationship.to.type.toLowerCase() === 'application' : false
       );
 
@@ -224,7 +244,10 @@ export class EntityResolver {
         if (relatedApp.to.id) {
           details = await this.fetchEntityGraphQL({ id: relatedApp.to.id }, 'application');
         } else if (relatedApp.to.shortId) {
-          details = await this.fetchEntityGraphQL({ shortId: relatedApp.to.shortId }, 'application');
+          details = await this.fetchEntityGraphQL(
+            { shortId: relatedApp.to.shortId },
+            'application'
+          );
         }
       }
     }
@@ -314,10 +337,18 @@ export class EntityResolver {
     expectedType: string
   ): Promise<GraphEntity | undefined> {
     try {
+      // Validate shortId
+      if (!shortId || typeof shortId !== 'string' || shortId.trim().length === 0) {
+        this.logger.debug('Invalid shortId provided', { shortId });
+        return undefined;
+      }
+
+      this.logger.debug('Fetching entity by shortId', { shortId, expectedType });
+
       const data = await this.graphqlClient.query<EntityByShortIdResponse>(
         `
           query EntityByShortId($shortId: String!, $type: String!) {
-            allEntities(filter: { shortId: $shortId, type: $type }) {
+            allEntities(filter: { shortId: $shortId, type: [$type] }, pagination: { limit: 1 }) {
               id
               shortId
               name
@@ -338,11 +369,13 @@ export class EntityResolver {
             }
           }
         `,
-        { shortId, type: expectedType }
+        { shortId: shortId.trim(), type: expectedType }
       );
 
       const entities = data.data?.allEntities ?? [];
-      const matchedEntity = entities.find((entity) => entity && this.matchesEntity(entity, shortId, expectedType));
+
+      // Return first result (filter should return exact match, no need to loop)
+      const matchedEntity = entities[0] || undefined;
 
       if (matchedEntity) {
         this.logger.debug('Found entity by shortId', {
@@ -357,7 +390,7 @@ export class EntityResolver {
         });
       }
 
-      return matchedEntity ?? undefined;
+      return matchedEntity;
     } catch (error) {
       this.logger.error('Failed to fetch entity by shortId', error as Error, {
         shortId,
@@ -372,107 +405,179 @@ export class EntityResolver {
   }
 
   /**
+   * Fetches repository by shortId using allRepos
+   */
+  private async fetchRepositoryByShortId(shortId: string): Promise<GraphEntityDetails | undefined> {
+    try {
+      // Validate shortId
+      if (!shortId || typeof shortId !== 'string' || shortId.trim().length === 0) {
+        this.logger.debug('Invalid shortId provided', { shortId });
+        return undefined;
+      }
+
+      this.logger.debug('Fetching repository by shortId', { shortId });
+
+      const data = await this.graphqlClient.query<AllReposResponse>(
+        `
+          query RepositoryByShortId($filter: RepoFilter) {
+            allRepos(filter: $filter, pagination: { limit: 1 }) {
+              id
+              name
+              description
+              url
+              ignore
+              readyForIntegration
+              externalSystem
+              components {
+                id
+                shortId
+                name
+              }
+            }
+          }
+        `,
+        {
+          filter: {
+            name: {
+              query: shortId.trim(),
+            },
+          },
+        }
+      );
+
+      const repos = data.data?.allRepos ?? [];
+
+      // Return first result
+      const repo = repos[0] || undefined;
+
+      if (repo) {
+        this.logger.debug('Found repository by shortId', {
+          id: repo.id,
+          name: repo.name,
+          url: repo.url || '(none)',
+        });
+
+        const details = this.toEntityDetails({
+          id: repo.id,
+          shortId: repo.name,
+          name: repo.name,
+          description: repo.description,
+          type: 'repo',
+          attributes: [
+            { field: 'url', value: repo.url },
+            { field: 'externalSystem', value: repo.externalSystem },
+          ],
+          relationships: [],
+        });
+
+        // Store components for linkage checking
+        if (repo.components && repo.components.length > 0) {
+          details.attributes.set('_components', repo.components);
+        }
+
+        return details;
+      } else {
+        this.logger.debug('No repository found for shortId', { shortId });
+      }
+
+      return undefined;
+    } catch (error) {
+      this.logger.error('Failed to fetch repository by shortId', error as Error, {
+        shortId,
+      });
+      throw new ApiError('Failed to fetch repository by shortId', {
+        shortId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  /**
    * Fetches repository by URL
    */
   private async fetchRepositoryByUrl(url: string): Promise<GraphEntityDetails | undefined> {
     try {
-      const searchTerms = [
-        convertToHttpsUrl(url), // HTTPS URL without .git
-        url, // Original URL
-        extractRepoNameFromUrl(url), // Just the repo name part
-        'devgrid-ui-client', // Hardcoded fallback
-      ].filter(Boolean);
+      // Validate URL format
+      if (!url || typeof url !== 'string' || url.trim().length === 0) {
+        this.logger.debug('Invalid URL provided', { url });
+        return undefined;
+      }
 
-      this.logger.debug('Searching for repository with terms', { searchTerms });
+      // Normalize URL: convert SSH to HTTPS (no .git handling needed per user requirements)
+      const normalizedUrl = convertToHttpsUrl(url.trim());
+      this.logger.debug('Searching for repository by URL', { originalUrl: url, normalizedUrl });
 
-      let repos: any[] = [];
-      for (const searchTerm of searchTerms) {
-        if (!searchTerm) continue;
-
-        this.logger.debug('Trying search term', { searchTerm });
-
-        const data = await this.graphqlClient.query<AllReposResponse>(
-          `
-            query AllRepos($filter: RepoFilter, $limit: Int!) {
-              allRepos(filter: $filter, pagination: { limit: $limit }) {
+      // Single query with URL filter
+      const data = await this.graphqlClient.query<AllReposResponse>(
+        `
+          query AllRepos($filter: RepoFilter) {
+            allRepos(filter: $filter, pagination: { limit: 1 }) {
+              id
+              name
+              description
+              url
+              ignore
+              readyForIntegration
+              externalSystem
+              components {
                 id
+                shortId
                 name
-                description
-                url
-                ignore
-                readyForIntegration
-                externalSystem
               }
             }
-          `,
-          {
-            filter: {
-              name: {
-                query: searchTerm,
-                match: 'contains',
-              },
+          }
+        `,
+        {
+          filter: {
+            url: {
+              query: normalizedUrl,
             },
-            limit: 20,
-          }
-        );
-
-        const foundRepos = data.data?.allRepos ?? [];
-        this.logger.debug('Found repositories for term', {
-          count: foundRepos.length,
-          searchTerm,
-        });
-
-        if (foundRepos.length > 0) {
-          repos = foundRepos;
-          break; // Use the first search that returns results
+          },
         }
+      );
+
+      const repos = data.data?.allRepos ?? [];
+
+      if (repos.length === 0) {
+        this.logger.debug('No repository found with URL', { url: normalizedUrl });
+        return undefined;
       }
 
-      this.logger.debug('Final result', { count: repos.length });
-
-      // Debug: Log the repository names to see what's available
-      if (repos.length > 0) {
-        this.logger.debug('Available repositories');
-        repos.forEach((repo, index) => {
-          this.logger.debug(`Repository ${index + 1}`, {
-            name: repo.name,
-            url: repo.url || '(none)',
-          });
-        });
+      // Return first result (filter should return exact match)
+      const repo = repos[0];
+      if (!repo) {
+        this.logger.debug('Repository result is null/undefined');
+        return undefined;
       }
 
-      // Find repository by exact URL match
-      const httpsUrl = convertToHttpsUrl(url);
-      for (const repo of repos) {
-        if (repo?.url) {
-          const repoHttpsUrl = convertToHttpsUrl(repo.url);
-          if (repoHttpsUrl === httpsUrl) {
-            this.logger.debug('Found matching repository', {
-              name: repo.name,
-              url: repo.url,
-            });
+      this.logger.debug('Found matching repository', {
+        id: repo.id,
+        name: repo.name,
+        url: repo.url,
+      });
 
-            return this.toEntityDetails({
-              id: repo.id,
-              shortId: repo.name,
-              name: repo.name,
-              description: repo.description,
-              type: 'repo',
-              attributes: [
-                { field: 'url', value: repo.url },
-                { field: 'externalSystem', value: repo.externalSystem },
-              ],
-              relationships: [],
-            });
-          }
-        }
+      const details = this.toEntityDetails({
+        id: repo.id,
+        shortId: repo.name,
+        name: repo.name,
+        description: repo.description,
+        type: 'repo',
+        attributes: [
+          { field: 'url', value: repo.url },
+          { field: 'externalSystem', value: repo.externalSystem },
+        ],
+        relationships: [],
+      });
+
+      // Store components for linkage checking
+      if (repo.components && repo.components.length > 0) {
+        details.attributes.set('_components', repo.components);
       }
 
-      this.logger.debug('No repository found with URL', { url });
-      return undefined;
+      return details;
     } catch (error) {
-      this.logger.error('Error searching repositories', error as Error, { url });
-      throw new ApiError('Failed to search repositories by URL', {
+      this.logger.error('Error fetching repository by URL', error as Error, { url });
+      throw new ApiError('Failed to fetch repository by URL', {
         url,
         error: error instanceof Error ? error.message : String(error),
       });
@@ -480,12 +585,35 @@ export class EntityResolver {
   }
 
   /**
-   * Gets Git remote URL
+   * Gets Git remote URL from workspace path
    */
-  private async getGitRemoteUrl(): Promise<string | undefined> {
+  private async getGitRemoteUrl(workspacePath?: string): Promise<string | undefined> {
     try {
-      const workspaceFolder = process.cwd(); // This should be injected in real implementation
-      return await this.gitService.getRemoteUrl(workspaceFolder);
+      if (!workspacePath) {
+        this.logger.debug('No workspace path provided, cannot get remote URL');
+        return undefined;
+      }
+
+      const startPath = workspacePath;
+      this.logger.debug('Finding git repository root', { startPath });
+
+      const repositoryRoot = await this.gitService.getRepositoryRoot(startPath);
+      if (!repositoryRoot) {
+        this.logger.debug('Not in a git repository, cannot get remote URL', { startPath });
+        return undefined;
+      }
+
+      this.logger.debug('Found git repository root', { repositoryRoot });
+
+      // Now get the remote URL from the repository root
+      const remoteUrl = await this.gitService.getRemoteUrl(repositoryRoot);
+      if (remoteUrl) {
+        this.logger.debug('Found git remote URL', { repositoryRoot, remoteUrl });
+      } else {
+        this.logger.debug('No remote URL found', { repositoryRoot });
+      }
+
+      return remoteUrl;
     } catch (error) {
       this.logger.debug('Failed to get Git remote URL', {
         error: error instanceof Error ? error.message : String(error),
@@ -511,7 +639,9 @@ export class EntityResolver {
       }
     }
 
-    const relationships = (entity.relationships ?? []).filter((rel): rel is NonNullable<typeof rel> => rel !== null);
+    const relationships = (entity.relationships ?? []).filter(
+      (rel): rel is NonNullable<typeof rel> => rel !== null
+    );
 
     const result: GraphEntityDetails = {
       entity: {
@@ -532,48 +662,6 @@ export class EntityResolver {
     });
 
     return result;
-  }
-
-  /**
-   * Checks if entity matches criteria
-   */
-  private matchesEntity(entity: GraphEntity, shortId: string, expectedType: string): boolean {
-    if (!entity) {
-      return false;
-    }
-
-    const normalizedShortId = shortId.toLowerCase().trim();
-    const normalizedExpectedType = expectedType.toLowerCase().trim();
-
-    // Check direct shortId match
-    if (entity.shortId?.toLowerCase().trim() === normalizedShortId) {
-      return true;
-    }
-
-    // Check type match
-    if (entity.type?.toLowerCase().trim() !== normalizedExpectedType) {
-      return false;
-    }
-
-    // Check attribute matches
-    for (const attribute of entity.attributes ?? []) {
-      if (!attribute?.field || !attribute.value) {
-        continue;
-      }
-
-      const field = attribute.field.toLowerCase();
-      const value = this.attributeValueToString(attribute.value);
-
-      if (field === 'shortid' && value === normalizedShortId) {
-        return true;
-      }
-
-      if (field === 'alt' && value === normalizedShortId) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
   /**
@@ -613,13 +701,46 @@ export class EntityResolver {
         details.entity.shortId ??
         this.attributeValueToString(details.attributes.get('name')) ??
         'Repository',
-      url: this.attributeValueToString(details.attributes.get('repositoryUrl')) ||
+      url:
+        this.attributeValueToString(details.attributes.get('repositoryUrl')) ||
         this.attributeValueToString(details.attributes.get('url')) ||
         undefined,
       description:
         details.entity.description ??
         this.attributeValueToString(details.attributes.get('description')) ??
         undefined,
+    };
+  }
+
+  /**
+   * Checks if a component is linked to a repository
+   */
+  checkRepoComponentLinkage(
+    componentId: string | undefined,
+    repositoryDetails: GraphEntityDetails | undefined
+  ): { linked: boolean | null; message: string } {
+    if (!componentId || !repositoryDetails) {
+      return {
+        linked: null,
+        message: 'Unable to verify linkage - missing component or repository information',
+      };
+    }
+
+    const components = repositoryDetails.attributes.get('_components');
+    if (!components || !Array.isArray(components)) {
+      return {
+        linked: null,
+        message: 'Unable to verify linkage - repository components information not available',
+      };
+    }
+
+    const isLinked = (components as Array<{ id: string }>).some(c => c.id === componentId);
+
+    return {
+      linked: isLinked,
+      message: isLinked
+        ? 'Repository and component are properly linked'
+        : 'Repository and component are not linked in DevGrid',
     };
   }
 

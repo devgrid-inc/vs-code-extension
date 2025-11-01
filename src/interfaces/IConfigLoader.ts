@@ -22,7 +22,9 @@ export interface IConfigLoader {
    * @param outputChannel - Optional output channel for logging
    * @returns Promise resolving to the loaded configuration or undefined if not found
    */
-  loadConfig(outputChannel?: { appendLine: (message: string) => void }): Promise<DevGridFileConfig | undefined>;
+  loadConfig(outputChannel?: {
+    appendLine: (message: string) => void;
+  }): Promise<DevGridFileConfig | undefined>;
 
   /**
    * Normalizes identifiers from configuration
@@ -40,5 +42,7 @@ export interface IConfigLoader {
    * @param outputChannel - Optional output channel for logging
    * @returns Promise resolving to the DevGrid context or undefined if not found
    */
-  loadDevGridContext(outputChannel?: { appendLine: (message: string) => void }): Promise<DevGridContext | undefined>;
+  loadDevGridContext(outputChannel?: {
+    appendLine: (message: string) => void;
+  }): Promise<DevGridContext | undefined>;
 }

@@ -23,6 +23,7 @@ export class DevGridError extends Error {
   public readonly code?: string;
   public readonly details?: Record<string, unknown>;
   public readonly retryable: boolean;
+  public override cause?: Error;
 
   constructor(
     message: string,
@@ -41,9 +42,7 @@ export class DevGridError extends Error {
     this.details = options.details;
     this.retryable = options.retryable ?? false;
 
-    if (options.cause) {
-      (this as any).cause = options.cause;
-    }
+    this.cause = options.cause;
 
     // Maintains proper stack trace for where our error was thrown (only available on V8)
     if (Error.captureStackTrace) {
@@ -195,7 +194,7 @@ export function formatErrorForLogging(error: unknown): Record<string, unknown> {
       details: error.details,
       retryable: error.retryable,
       stack: error.stack,
-      cause: (error as any).cause ? formatErrorForLogging((error as any).cause) : undefined,
+      cause: error.cause ? formatErrorForLogging(error.cause) : undefined,
     };
   }
 

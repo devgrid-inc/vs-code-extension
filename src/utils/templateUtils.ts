@@ -11,7 +11,10 @@
  * renderTemplate('/repos/{repositoryId}', { repositoryId: '123' }) // '/repos/123'
  * renderTemplate('Hello {name}!', { name: 'World' }) // 'Hello World!'
  */
-export function renderTemplate(template: string, context: Record<string, string | undefined>): string {
+export function renderTemplate(
+  template: string,
+  context: Record<string, string | undefined>
+): string {
   return template.replace(/\{([^}]+)\}/g, (_match, key: string) => {
     const value = context[key];
     return value ?? '';
@@ -27,7 +30,10 @@ export function renderTemplate(template: string, context: Record<string, string 
  * validateTemplate('/repos/{repositoryId}', { repositoryId: '123' }) // true
  * validateTemplate('/repos/{repositoryId}', {}) // false
  */
-export function validateTemplate(template: string, context: Record<string, string | undefined>): boolean {
+export function validateTemplate(
+  template: string,
+  context: Record<string, string | undefined>
+): boolean {
   const matches = template.match(/\{([^}]+)\}/g);
   if (!matches) {
     return true; // No placeholders to validate
@@ -84,7 +90,7 @@ export function renderTemplateWithFallbacks(
  * @param context - The context object with variable values
  * @returns The first fully renderable template or undefined if none can be rendered
  * @example
- * renderFirstValidTemplate(['/repos/{repositoryId}', '/repos/{repositorySlug}'], { repositoryId: '123' }) // '/repos/123'
+ * renderFirstValidTemplate(['/repos/{repositoryId}', '/repos/{componentSlug}'], { repositoryId: '123' }) // '/repos/123'
  */
 export function renderFirstValidTemplate(
   templates: string[],

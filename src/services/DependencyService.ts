@@ -1,30 +1,15 @@
-import type { ILogger } from '../interfaces/ILogger';
 import type { IGraphQLClient } from '../interfaces/IGraphQLClient';
+import type { ILogger } from '../interfaces/ILogger';
 import type { DevGridDependency } from '../types';
-import { ApiError } from '../errors/DevGridError';
-
-/**
- * GraphQL response interfaces
- */
-interface GraphDependency {
-  id?: string | null;
-  name?: string | null;
-  version?: string | null;
-  type?: string | null;
-  latestVersion?: string | null;
-  url?: string | null;
-}
-
-interface EntityDependenciesResponse {
-  dependencies?: {
-    items?: Array<GraphDependency | null> | null;
-  } | null;
-}
 
 /**
  * Dependency service for DevGrid dependencies
  */
 export class DependencyService {
+  private cache = new Map<string, { data: DevGridDependency[]; timestamp: number }>();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+  // eslint-disable-next-line no-useless-constructor -- TypeScript parameter properties for dependency injection
   constructor(
     private graphqlClient: IGraphQLClient,
     private logger: ILogger,
@@ -32,63 +17,44 @@ export class DependencyService {
   ) {}
 
   /**
+   * Clears the cache for all or specific entity
+   */
+  clearCache(entityId?: string): void {
+    if (entityId) {
+      this.cache.delete(entityId);
+      this.logger.debug('Cleared dependencies cache for entity', { entityId });
+    } else {
+      this.cache.clear();
+      this.logger.debug('Cleared all dependencies cache');
+    }
+  }
+
+  /**
    * Fetches dependencies for an entity
+   * Note: Dependencies query is not yet available in the GraphQL API
    */
   async fetchDependencies(entityId: string): Promise<DevGridDependency[]> {
     this.logger.debug('Fetching dependencies', { entityId });
 
-    try {
-      const data = await this.graphqlClient.query<EntityDependenciesResponse>(
-        `
-          query EntityDependencies($entityId: ID!, $limit: Int!) {
-            dependencies(filter: { entityId: $entityId }, pagination: { limit: $limit }) {
-              items {
-                id
-                name
-                version
-                type
-                latestVersion
-                url
-              }
-            }
-          }
-        `,
-        {
-          entityId,
-          limit: this.maxItems,
-        }
-      );
-
-      const dependencies = data.data?.dependencies?.items ?? [];
-      const result: DevGridDependency[] = [];
-
-      for (const item of dependencies) {
-        if (!item?.id || !item.name) {
-          continue;
-        }
-
-        result.push({
-          id: item.id,
-          name: item.name,
-          version: item.version ?? undefined,
-          type: item.type ?? undefined,
-          latestVersion: item.latestVersion ?? undefined,
-          url: item.url ?? undefined,
-        });
-      }
-
-      this.logger.debug('Fetched dependencies', {
-        entityId,
-        count: result.length,
-      });
-
-      return result;
-    } catch (error) {
-      this.logger.error('Failed to fetch dependencies', error as Error, { entityId });
-      throw new ApiError('Failed to fetch dependencies', {
-        entityId,
-        error: error instanceof Error ? error.message : String(error),
-      });
+    // Check cache first
+    const cached = this.cache.get(entityId);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      this.logger.debug('Returning cached dependencies', { entityId, count: cached.data.length });
+      return cached.data;
     }
+
+    // Dependencies query is not available in the GraphQL schema yet
+    // Return empty array until the API supports it
+    this.logger.debug('Dependencies query not available in GraphQL API', { entityId });
+
+    const result: DevGridDependency[] = [];
+
+    // Cache the result
+    this.cache.set(entityId, {
+      data: result,
+      timestamp: Date.now(),
+    });
+
+    return result;
   }
 }

@@ -38,7 +38,10 @@ export interface IHttpClient {
    * @param options - Request options
    * @returns Promise resolving to the HTTP response
    */
-  get<T = unknown>(url: string, options?: Omit<HttpRequestOptions, 'method' | 'body'>): Promise<HttpResponse<T>>;
+  get<T = unknown>(
+    url: string,
+    options?: Omit<HttpRequestOptions, 'method' | 'body'>
+  ): Promise<HttpResponse<T>>;
 
   /**
    * Makes a POST request
